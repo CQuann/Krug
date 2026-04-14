@@ -1,4 +1,4 @@
-package com.example.krug.ui.screens
+package com.example.krug.ui.screens.main
 
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable

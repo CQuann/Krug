@@ -6,7 +6,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.krug.ui.screens.MainAppScreen
+import com.example.krug.ui.screens.main.MainAppScreen
 import com.example.krug.ui.screens.auth.LoginEmailScreen
 import com.example.krug.ui.screens.auth.RegisterProfileScreen
 import com.example.krug.ui.screens.auth.VerifyCodeScreen

@@ -13,23 +13,23 @@ import com.example.krug.data.repository.RetrofitAuthRepository
 import com.example.krug.di.NetworkModule
 import com.example.krug.ui.SetupNavGraph
 import com.example.krug.ui.theme.KrugTheme
+import dagger.hilt.android.AndroidEntryPoint
 import kotlinx.coroutines.launch
-
+@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        lifecycleScope.launch {
-            val authApi = NetworkModule.provideAuthApi(NetworkModule.provideRetrofit(NetworkModule.provideOkHttpClient()))
-            val repo = RetrofitAuthRepository(authApi)
-            val result = repo.requestCode("test@example.com")
-            println("TEST RESULT: $result")
-        }
+//        lifecycleScope.launch {
+//            val authApi = NetworkModule.provideAuthApi(NetworkModule.provideRetrofit(NetworkModule.provideOkHttpClient()))
+//            val repo = RetrofitAuthRepository(authApi)
+//            val result = repo.requestCode("p9083718@gmail.com")
+//            println("TEST RESULT: $result")
+//        }
 
         setContent {
             KrugTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
-//                    SetupNavGraph()
-                    Text("testing network (logs)")
+                    SetupNavGraph()
                 }
             }
         }

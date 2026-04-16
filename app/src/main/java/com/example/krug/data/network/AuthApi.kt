@@ -8,7 +8,7 @@ interface AuthApi {
     @POST("auth/request-code")
     suspend fun requestCode(@Body request: EmailRequest): RequestCodeResponse
 
-    @POST("auth/verify-code")
+    @POST("auth/verify_code")
     suspend fun verifyCode(@Body request: VerifyCodeRequest): VerifyCodeResponse
 
     @POST("auth/register")

@@ -18,40 +18,41 @@ class LoginEmailViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    // 1. Состояние UI (экран может быть в одном из этих состояний)
+    private val _email = MutableStateFlow("")
+    val email: StateFlow<String> = _email.asStateFlow()
+
     private val _uiState = MutableStateFlow<LoginEmailUiState>(LoginEmailUiState.Idle)
     val uiState: StateFlow<LoginEmailUiState> = _uiState.asStateFlow()
 
-    // 2. Одноразовые события навигации (переход на другой экран)
     private val _navigationEvent = MutableSharedFlow<String>()
     val navigationEvent = _navigationEvent.asSharedFlow()
 
-    // 3. Метод, вызываемый UI при нажатии кнопки "Далее"
-    fun sendCode(email: String) {
+    fun updateEmail(newEmail: String) {
+        _email.value = newEmail
+    }
+
+    fun sendCode() {
+        val currentEmail = _email.value
+        // Валидация email перед отправкой
+        if (currentEmail.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(currentEmail).matches()) {
+            _uiState.value = LoginEmailUiState.Error("Введите корректный email")
+            return
+        }
         viewModelScope.launch {
-            // Сначала показываем состояние загрузки
             _uiState.value = LoginEmailUiState.Loading
-
-            // Вызываем репозиторий (suspend функция)
-            val result = authRepository.requestCode(email)
-
-            // Обрабатываем результат
+            val result = authRepository.requestCode(currentEmail)
             when (result) {
                 is AuthResult.Success -> {
-                    // Успех: сбрасываем состояние загрузки
                     _uiState.value = LoginEmailUiState.Idle
-                    // Отправляем событие навигации, передавая email
-                    _navigationEvent.emit(email)
+                    _navigationEvent.emit(currentEmail)
                 }
                 is AuthResult.Error -> {
-                    // Ошибка: показываем сообщение
                     _uiState.value = LoginEmailUiState.Error(result.message)
                 }
             }
         }
     }
 
-    // 4. Метод для сброса ошибки (например, когда пользователь начинает редактировать email)
     fun resetError() {
         if (_uiState.value is LoginEmailUiState.Error) {
             _uiState.value = LoginEmailUiState.Idle
@@ -59,9 +60,8 @@ class LoginEmailViewModel @Inject constructor(
     }
 }
 
-// 5. Sealed class, описывающий все возможные состояния UI
 sealed class LoginEmailUiState {
-    object Idle : LoginEmailUiState()          // ничего не происходит
-    object Loading : LoginEmailUiState()       // идёт запрос
-    data class Error(val message: String) : LoginEmailUiState() // ошибка с текстом
+    object Idle : LoginEmailUiState()
+    object Loading : LoginEmailUiState()
+    data class Error(val message: String) : LoginEmailUiState()
 }

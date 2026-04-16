@@ -6,8 +6,8 @@ import com.example.krug.data.local.TokenManager
 import com.example.krug.data.model.AuthResult
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -17,29 +17,28 @@ class SplashViewModel @Inject constructor(
     private val authRepository: AuthRepository
 ) : ViewModel() {
 
-    private val _state = MutableStateFlow<SplashState>(SplashState.Loading)
-    val state: StateFlow<SplashState> = _state
+    private val _navigationEvent = MutableSharedFlow<SplashNavigation>()
+    val navigationEvent = _navigationEvent.asSharedFlow()
 
     fun checkAuth() {
         viewModelScope.launch {
             val token = tokenManager.getToken()
             if (token == null) {
-                _state.value = SplashState.NavigateToLogin
+                _navigationEvent.emit(SplashNavigation.GoToLogin)
                 return@launch
             }
             val result = authRepository.validateToken(token)
             if (result is AuthResult.Success && result.data) {
-                _state.value = SplashState.NavigateToMain
+                _navigationEvent.emit(SplashNavigation.GoToMain)
             } else {
                 tokenManager.clearToken()
-                _state.value = SplashState.NavigateToLogin
+                _navigationEvent.emit(SplashNavigation.GoToLogin)
             }
         }
     }
 }
 
-sealed class SplashState {
-    object Loading : SplashState()
-    object NavigateToMain : SplashState()
-    object NavigateToLogin : SplashState()
+sealed class SplashNavigation {
+    object GoToMain : SplashNavigation()
+    object GoToLogin : SplashNavigation()
 }

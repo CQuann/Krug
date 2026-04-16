@@ -2,6 +2,7 @@ package com.example.krug.ui.screens.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.krug.data.local.TokenManager
 import com.example.krug.data.model.AuthResult
 import com.example.krug.data.model.VerifyResult
 import com.example.krug.data.repository.AuthRepository
@@ -16,13 +17,13 @@ import javax.inject.Inject
 
 @HiltViewModel
 class VerifyCodeViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val tokenManager: TokenManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<VerifyCodeUiState>(VerifyCodeUiState.Idle)
     val uiState: StateFlow<VerifyCodeUiState> = _uiState.asStateFlow()
 
-    // События навигации: либо на главный, либо на регистрацию
     private val _navigationEvent = MutableSharedFlow<VerifyNavigation>()
     val navigationEvent = _navigationEvent.asSharedFlow()
 
@@ -35,8 +36,8 @@ class VerifyCodeViewModel @Inject constructor(
                     _uiState.value = VerifyCodeUiState.Idle
                     when (val verifyResult = result.data) {
                         is VerifyResult.LoginSuccess -> {
-                            // TODO: Сохраняем токен (пока просто событие, сохранение сделаем позже)
-                            _navigationEvent.emit(VerifyNavigation.GoToMain(verifyResult.token))
+                            tokenManager.saveToken(verifyResult.token)
+                            _navigationEvent.emit(VerifyNavigation.GoToMain)
                         }
                         is VerifyResult.RegisterNeeded -> {
                             _navigationEvent.emit(VerifyNavigation.GoToRegister(email, verifyResult.tempToken))
@@ -64,6 +65,6 @@ sealed class VerifyCodeUiState {
 }
 
 sealed class VerifyNavigation {
-    data class GoToMain(val token: String) : VerifyNavigation()
+    object GoToMain : VerifyNavigation()
     data class GoToRegister(val email: String, val tempToken: String) : VerifyNavigation()
 }

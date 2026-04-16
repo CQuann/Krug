@@ -39,36 +39,44 @@ fun CodeInputField(
 ) {
     var code by remember { mutableStateOf("") }
     val focusRequesters = List(length) { remember { FocusRequester() } }
+    var completedEmitted by remember { mutableStateOf(false) }
 
+    // Обработка изменения кода
     fun updateCode(newCode: String) {
         val filtered = newCode.filter { it.isDigit() }.take(length)
         if (filtered != code) {
             code = filtered
             onCodeChanged(code)
+            completedEmitted = false
         }
     }
 
-    // Переход фокуса вперёд и вызов завершения
+    // Эффект для перемещения фокуса при изменении кода (только вперёд)
     LaunchedEffect(code) {
-        val currentLength = code.length
-        if (currentLength in 1 until length) {
-            focusRequesters.getOrNull(currentLength)?.requestFocus()
+        val currentLen = code.length
+        if (currentLen in 1 until length) {
+            focusRequesters.getOrNull(currentLen)?.requestFocus()
         }
-        if (currentLength == length) {
+        if (currentLen == length && !completedEmitted) {
+            completedEmitted = true
             onCodeCompleted(code)
         }
     }
 
-    // Переход фокуса назад при удалении (Backspace)
+    // Отдельный эффект для обработки удаления (backspace) – переводим фокус назад
+    // Используем snapshotFlow, но проще: при уменьшении длины кода переводим фокус на предыдущее поле
+    // Этот эффект не должен вызывать рекурсию, так как он не меняет code
     LaunchedEffect(code) {
-        delay(10)
-        val currentLength = code.length
-        if (currentLength < length && currentLength >= 0) {
-            if (currentLength > 0) {
-                focusRequesters.getOrNull(currentLength - 1)?.requestFocus()
-            } else {
-                focusRequesters.firstOrNull()?.requestFocus()
-            }
+        delay(10) // небольшая задержка, чтобы дать возможность отработать основному эффекту
+        val currentLen = code.length
+        if (currentLen > 0 && currentLen < length) {
+            // Если поле пустое и пользователь нажал backspace, фокус должен быть на этом же поле,
+            // но для удобства переведём на предыдущее, если текущее пустое и мы не в начале
+            // Логика: фокус на позицию currentLen (индекс currentLen) – это следующее поле.
+            // При удалении currentLen уменьшается, значит новое поле с индексом currentLen и есть то, куда надо перевести фокус.
+            focusRequesters.getOrNull(currentLen)?.requestFocus()
+        } else if (currentLen == 0) {
+            focusRequesters.firstOrNull()?.requestFocus()
         }
     }
 
@@ -84,15 +92,15 @@ fun CodeInputField(
             Box(
                 modifier = Modifier
                     .weight(1f)
-                    .aspectRatio(1f) // гарантирует квадратную форму
-                    .clip(RoundedCornerShape(12.dp))
-                    .then(if (isFocused) Modifier else Modifier),
+                    .aspectRatio(1f)
+                    .clip(RoundedCornerShape(12.dp)),
                 contentAlignment = Alignment.Center
             ) {
                 Surface(
                     shape = RoundedCornerShape(12.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant,
-                    modifier = Modifier.fillMaxSize() // теперь квадрат
+                    color = if (isFocused) MaterialTheme.colorScheme.primary.copy(alpha = 0.1f)
+                    else MaterialTheme.colorScheme.surfaceVariant,
+                    modifier = Modifier.fillMaxSize()
                 ) {
                     BasicTextField(
                         value = char,

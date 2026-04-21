@@ -1,4 +1,4 @@
-package com.example.krug.data.model
+package com.example.krug.data.model.auth
 
 sealed class AuthResult<out T> {
     data class Success<T>(val data: T) : AuthResult<T>()

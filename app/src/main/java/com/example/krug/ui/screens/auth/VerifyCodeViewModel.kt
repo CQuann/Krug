@@ -3,8 +3,8 @@ package com.example.krug.ui.screens.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.TokenManager
-import com.example.krug.data.model.AuthResult
-import com.example.krug.data.model.VerifyResult
+import com.example.krug.data.model.auth.AuthResult
+import com.example.krug.data.model.auth.VerifyResult
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,10 +24,16 @@ class VerifyCodeViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<VerifyCodeUiState>(VerifyCodeUiState.Idle)
     val uiState: StateFlow<VerifyCodeUiState> = _uiState.asStateFlow()
 
-    private val _navigationEvent = MutableSharedFlow<VerifyNavigation>()
+    private val _navigationEvent =
+        MutableSharedFlow<VerifyNavigation>(
+            replay = 0,
+            extraBufferCapacity = 1
+        )
     val navigationEvent = _navigationEvent.asSharedFlow()
 
     fun verifyCode(email: String, code: String) {
+        if (_uiState.value is VerifyCodeUiState.Loading) return
+
         viewModelScope.launch {
             _uiState.value = VerifyCodeUiState.Loading
             val result = authRepository.verifyCode(email, code)
@@ -40,7 +46,7 @@ class VerifyCodeViewModel @Inject constructor(
                             _navigationEvent.emit(VerifyNavigation.GoToMain)
                         }
                         is VerifyResult.RegisterNeeded -> {
-                            _navigationEvent.emit(VerifyNavigation.GoToRegister(email, verifyResult.tempToken))
+                            _navigationEvent.emit(VerifyNavigation.GoToRegister(email))
                         }
                     }
                 }
@@ -66,5 +72,5 @@ sealed class VerifyCodeUiState {
 
 sealed class VerifyNavigation {
     object GoToMain : VerifyNavigation()
-    data class GoToRegister(val email: String, val tempToken: String) : VerifyNavigation()
+    data class GoToRegister(val email: String) : VerifyNavigation()
 }

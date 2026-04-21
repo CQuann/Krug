@@ -18,6 +18,7 @@ import com.example.krug.ui.screens.auth.RegisterProfileViewModel
 import com.example.krug.ui.screens.auth.VerifyCodeScreen
 import com.example.krug.ui.screens.auth.VerifyCodeViewModel
 import com.example.krug.ui.screens.auth.VerifyNavigation
+import com.example.krug.ui.screens.main.MainAppViewModel
 import com.example.krug.ui.screens.splash.SplashNavigation
 import com.example.krug.ui.screens.splash.SplashScreen
 import com.example.krug.ui.screens.splash.SplashViewModel
@@ -91,7 +92,7 @@ fun SetupNavGraph() {
                         }
                         is VerifyNavigation.GoToRegister -> {
                             navController.navigate(
-                                Screen.RegisterProfile.passArgs(navigation.email, navigation.tempToken)
+                                Screen.RegisterProfile.passArgs(navigation.email)
                             )
                         }
                     }
@@ -109,12 +110,10 @@ fun SetupNavGraph() {
         composable(
             route = Screen.RegisterProfile.route,
             arguments = listOf(
-                navArgument("email") { type = NavType.StringType },
-                navArgument("tempToken") { type = NavType.StringType }
+                navArgument("email") { type = NavType.StringType }
             )
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
-            val tempToken = backStackEntry.arguments?.getString("tempToken") ?: ""
             val viewModel: RegisterProfileViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
             val displayName by viewModel.displayName.collectAsStateWithLifecycle()
@@ -139,13 +138,27 @@ fun SetupNavGraph() {
                 onDisplayNameChange = { viewModel.updateDisplayName(it) },
                 onUsernameChange = { viewModel.updateUsername(it) },
                 onBirthdayChange = { viewModel.updateBirthday(it) },
-                onRegisterClick = { viewModel.register(email, tempToken) },
+                onRegisterClick = { viewModel.register(email) },
                 onResetError = { viewModel.resetError() }
             )
         }
 
         composable(Screen.MainApp.route) {
-            MainAppScreen()
+            val viewModel: MainAppViewModel = hiltViewModel()
+            val userData by viewModel.userData.collectAsStateWithLifecycle()
+            val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+            val error by viewModel.error.collectAsStateWithLifecycle()
+
+            LaunchedEffect(Unit) {
+                viewModel.loadUserData()
+            }
+
+            MainAppScreen(
+                userData = userData,
+                isLoading = isLoading,
+                error = error,
+                onRefresh = { viewModel.loadUserData() }
+            )
         }
     }
 }

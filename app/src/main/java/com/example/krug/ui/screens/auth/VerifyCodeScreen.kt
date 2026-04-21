@@ -34,7 +34,11 @@ fun VerifyCodeScreen(
 
         CodeInputField(
             length = 6,
-            onCodeChanged = { onResetError() },
+            onCodeChanged = {
+                if (uiState is VerifyCodeUiState.Error) {
+                    onResetError()
+                }
+            },
             onCodeCompleted = onCodeCompleted
         )
 

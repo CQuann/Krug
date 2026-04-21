@@ -1,6 +1,6 @@
 package com.example.krug.data.model
 
-data class RequestCodeResponse(
+data class UserEditResponse(
     val success: Boolean,
     val error: String? = null
 )

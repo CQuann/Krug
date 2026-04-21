@@ -1,4 +1,4 @@
-package com.example.krug.data.model
+package com.example.krug.data.model.auth
 
 data class LogoutResponse(
     val success: Boolean,

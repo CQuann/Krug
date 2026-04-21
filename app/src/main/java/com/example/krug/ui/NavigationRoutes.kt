@@ -7,8 +7,8 @@ sealed class Screen(val route: String) {
         fun passArgs(email: String): String = "verify_code/$email"
     }
 
-    object RegisterProfile : Screen("register_profile/{email}/{tempToken}") {
-        fun passArgs(email: String, tempToken: String): String = "register_profile/$email/$tempToken"
+    object RegisterProfile : Screen("register_profile/{email}") {
+        fun passArgs(email: String): String = "register_profile/$email"
     }
 
     object MainApp : Screen("main_app")

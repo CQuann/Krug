@@ -3,7 +3,7 @@ package com.example.krug.ui.screens.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.TokenManager
-import com.example.krug.data.model.AuthResult
+import com.example.krug.data.model.auth.AuthResult
 import com.example.krug.data.model.UserData
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -77,12 +77,12 @@ class RegisterProfileViewModel @Inject constructor(
         }
     }
 
-    fun register(email: String, tempToken: String) {
+    fun register(email: String) {
         viewModelScope.launch {
             _uiState.value = RegisterUiState.Loading
             val birthdayValue = _birthday.value.takeIf { it.isNotBlank() }
             val userData = UserData(email, _displayName.value, birthdayValue, _username.value)
-            val result = authRepository.register(userData, tempToken)
+            val result = authRepository.register(userData)
             when (result) {
                 is AuthResult.Success -> {
                     tokenManager.saveToken(result.data)

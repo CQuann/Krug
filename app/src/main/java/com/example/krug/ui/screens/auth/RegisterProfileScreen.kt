@@ -1,6 +1,8 @@
 package com.example.krug.ui.screens.auth
 
 import androidx.compose.foundation.layout.*
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -12,6 +14,7 @@ import com.example.krug.ui.theme.KrugTheme
 import java.text.SimpleDateFormat
 import java.util.*
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterProfileScreen(
     uiState: RegisterUiState,
@@ -30,12 +33,9 @@ fun RegisterProfileScreen(
     var showDatePicker by remember { mutableStateOf(false) }
     var isCheckingUsername by remember { mutableStateOf(false) }
 
-
-    // Состояние для DatePicker
     val datePickerState = rememberDatePickerState()
-    val selectedDateMillis = datePickerState.selectedDateMillis
+    var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
 
-    // Форматирование выбранной даты в "yyyy-MM-dd"
     val formattedDate = remember(selectedDateMillis) {
         selectedDateMillis?.let {
             val date = Date(it)
@@ -43,15 +43,6 @@ fun RegisterProfileScreen(
         } ?: ""
     }
 
-    // При выборе даты обновляем поле
-    LaunchedEffect(formattedDate) {
-        if (formattedDate.isNotBlank()) {
-            onBirthdayChange(formattedDate)
-            showDatePicker = false
-        }
-    }
-
-    // Сброс ошибок при изменении полей
     LaunchedEffect(displayName, username) {
         displayNameError = null
         usernameError = null
@@ -78,15 +69,23 @@ fun RegisterProfileScreen(
 
         OutlinedTextField(
             value = username,
-            onValueChange = onUsernameChange,
+            onValueChange = { newUsername ->
+                onUsernameChange(newUsername)
+                // Проверка длины в реальном времени
+                if (newUsername.isNotBlank() && newUsername.length < 3) {
+                    usernameError = "Слишком короткий никнейм (мин. 3 символа)"
+                } else {
+                    usernameError = null
+                }
+            },
             label = { Text("Никнейм") },
             isError = usernameError != null,
             supportingText = {
                 when {
                     usernameError != null -> Text(usernameError!!)
                     isCheckingUsername -> Text("Проверка...", color = Color.Gray)
-                    usernameAvailable == true -> Text("✓ доступен", color = Color.Green)
-                    usernameAvailable == false -> Text("✗ уже занят", color = Color.Red)
+                    usernameAvailable == true -> Text("Доступен")
+                    usernameAvailable == false -> Text("Уже занят")
                     else -> Text(" ")
                 }
             },
@@ -101,8 +100,11 @@ fun RegisterProfileScreen(
             label = { Text("Дата рождения (ГГГГ-ММ-ДД)") },
             readOnly = true,
             trailingIcon = {
-                TextButton(onClick = { showDatePicker = true }) {
-                    Text("Выбрать")
+                IconButton(onClick = { showDatePicker = !showDatePicker }) {
+                    Icon(
+                        imageVector = Icons.Default.DateRange,
+                        contentDescription = "Select date"
+                    )
                 }
             },
             modifier = Modifier.fillMaxWidth()
@@ -118,6 +120,9 @@ fun RegisterProfileScreen(
                 }
                 if (username.isBlank()) {
                     usernameError = "Введите никнейм"
+                    valid = false
+                } else if (username.length < 3) {
+                    usernameError = "Слишком короткий никнейм"
                     valid = false
                 } else if (usernameAvailable != true) {
                     usernameError = "Никнейм недоступен"
@@ -150,8 +155,11 @@ fun RegisterProfileScreen(
             onDismissRequest = { showDatePicker = false },
             confirmButton = {
                 TextButton(onClick = {
-                    // При подтверждении дата уже обновится через LaunchedEffect
-                    if (selectedDateMillis == null) showDatePicker = false
+                    selectedDateMillis = datePickerState.selectedDateMillis
+                    if (selectedDateMillis != null) {
+                        onBirthdayChange(formattedDate)
+                    }
+                    showDatePicker = false
                 }) {
                     Text("OK")
                 }
@@ -170,7 +178,7 @@ fun RegisterProfileScreen(
 @Preview(showBackground = true)
 @Composable
 fun RegisterProfileScreenPreview() {
-    KrugTheme {
+//    KrugTheme {
         RegisterProfileScreen(
             uiState = RegisterUiState.Idle,
             displayName = "",
@@ -183,5 +191,5 @@ fun RegisterProfileScreenPreview() {
             onRegisterClick = {},
             onResetError = {}
         )
-    }
+//    }
 }

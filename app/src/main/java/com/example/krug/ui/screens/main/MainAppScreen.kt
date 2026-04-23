@@ -13,6 +13,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.krug.data.model.UserData
 
@@ -21,10 +22,13 @@ fun MainAppScreen(
     userData: UserData?,
     isLoading: Boolean,
     error: String?,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onEditProfileClick: () -> Unit
 ) {
     Column(
-        modifier = Modifier.fillMaxSize().padding(16.dp),
+        modifier = Modifier
+            .fillMaxSize()
+            .padding(16.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
@@ -37,6 +41,7 @@ fun MainAppScreen(
                     Text("Повторить")
                 }
             }
+
             userData != null -> {
                 Text("Добро пожаловать, ${userData.display_name}!")
                 Text("Username: ${userData.username}")
@@ -44,8 +49,20 @@ fun MainAppScreen(
                 userData.birthday?.let {
                     Text("Дата рождения: $it")
                 }
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+
+                Button(
+                    onClick = onEditProfileClick
+                ) {
+                    Text("Профиль")
+                }
             }
+
             else -> Text("Нет данных")
+
+
         }
     }
 }

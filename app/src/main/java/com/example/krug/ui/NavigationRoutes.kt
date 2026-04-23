@@ -13,5 +13,7 @@ sealed class Screen(val route: String) {
 
     object MainApp : Screen("main_app")
     object Splash : Screen("splash")
+
+    object EditProfile : Screen("edit_profile")
 }
 

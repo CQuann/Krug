@@ -10,14 +10,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.krug.ui.screens.auth.*
 import com.example.krug.ui.screens.main.MainAppScreen
-import com.example.krug.ui.screens.auth.LoginEmailScreen
-import com.example.krug.ui.screens.auth.LoginEmailViewModel
-import com.example.krug.ui.screens.auth.RegisterProfileScreen
-import com.example.krug.ui.screens.auth.RegisterProfileViewModel
-import com.example.krug.ui.screens.auth.VerifyCodeScreen
-import com.example.krug.ui.screens.auth.VerifyCodeViewModel
-import com.example.krug.ui.screens.auth.VerifyNavigation
 import com.example.krug.ui.screens.main.MainAppViewModel
 import com.example.krug.ui.screens.splash.SplashNavigation
 import com.example.krug.ui.screens.splash.SplashScreen
@@ -120,11 +114,16 @@ fun SetupNavGraph() {
             val username by viewModel.username.collectAsStateWithLifecycle()
             val birthday by viewModel.birthday.collectAsStateWithLifecycle()
             val usernameAvailable by viewModel.usernameAvailable.collectAsStateWithLifecycle()
+            val isCheckingUsername by viewModel.isCheckingUsername.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
-                viewModel.navigationEvent.collect {
-                    navController.navigate(Screen.MainApp.route) {
-                        popUpTo(Screen.LoginEmail.route) { inclusive = true }
+                viewModel.navigationEvent.collect { navigation ->
+                    when (navigation) {
+                        RegisterNavigation.GoToAvatarUpload -> {
+                            navController.navigate(Screen.AvatarUpload.route) {
+                                popUpTo(Screen.RegisterProfile.route) { inclusive = true }
+                            }
+                        }
                     }
                 }
             }
@@ -135,6 +134,7 @@ fun SetupNavGraph() {
                 username = username,
                 birthday = birthday,
                 usernameAvailable = usernameAvailable,
+                isCheckingUsername = isCheckingUsername,
                 onDisplayNameChange = { viewModel.updateDisplayName(it) },
                 onUsernameChange = { viewModel.updateUsername(it) },
                 onBirthdayChange = { viewModel.updateBirthday(it) },
@@ -143,17 +143,37 @@ fun SetupNavGraph() {
             )
         }
 
+        composable(Screen.AvatarUpload.route) {
+            val viewModel: AvatarUploadViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
+
+            LaunchedEffect(Unit) {
+                viewModel.navigationEvent.collect {
+                    navController.navigate(Screen.MainApp.route) {
+                        popUpTo(Screen.LoginEmail.route) { inclusive = true }
+                    }
+                }
+            }
+
+            AvatarUploadScreen(
+                uiState = uiState,
+                avatarUri = avatarUri,
+                onSetAvatarUri = { viewModel.setAvatarUri(it) },
+                onUploadAvatar = { viewModel.uploadAvatar() },
+                onSkipAvatar = { viewModel.skipAvatar() }
+            )
+        }
+
         composable(Screen.MainApp.route) {
             val viewModel: MainAppViewModel = hiltViewModel()
+            val userId by viewModel.userId.collectAsStateWithLifecycle()
             val userData by viewModel.userData.collectAsStateWithLifecycle()
             val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
             val error by viewModel.error.collectAsStateWithLifecycle()
 
-            LaunchedEffect(Unit) {
-                viewModel.loadUserData()
-            }
-
             MainAppScreen(
+                userId = userId,
                 userData = userData,
                 isLoading = isLoading,
                 error = error,

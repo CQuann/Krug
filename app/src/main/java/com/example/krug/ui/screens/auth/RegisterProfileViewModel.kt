@@ -3,6 +3,7 @@ package com.example.krug.ui.screens.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.TokenManager
+import com.example.krug.data.local.UserIdManager
 import com.example.krug.data.model.auth.AuthResult
 import com.example.krug.data.model.UserData
 import com.example.krug.data.repository.AuthRepository
@@ -20,7 +21,8 @@ import javax.inject.Inject
 @HiltViewModel
 class RegisterProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val userIdManager: UserIdManager
 ) : ViewModel() {
 
     private val _displayName = MutableStateFlow("")
@@ -35,14 +37,16 @@ class RegisterProfileViewModel @Inject constructor(
     private val _usernameAvailable = MutableStateFlow<Boolean?>(null)
     val usernameAvailable: StateFlow<Boolean?> = _usernameAvailable.asStateFlow()
 
-
     private val _uiState = MutableStateFlow<RegisterUiState>(RegisterUiState.Idle)
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
-    private val _navigationEvent = MutableSharedFlow<Unit>()
+    private val _navigationEvent = MutableSharedFlow<RegisterNavigation>()
     val navigationEvent = _navigationEvent.asSharedFlow()
 
     private var checkUsernameJob: Job? = null
+
+    private val _isCheckingUsername = MutableStateFlow(false)
+    val isCheckingUsername: StateFlow<Boolean> = _isCheckingUsername.asStateFlow()
 
     fun updateDisplayName(name: String) {
         _displayName.value = name
@@ -56,9 +60,6 @@ class RegisterProfileViewModel @Inject constructor(
     fun updateBirthday(date: String) {
         _birthday.value = date
     }
-
-    private val _isCheckingUsername = MutableStateFlow(false)
-    val isCheckingUsername: StateFlow<Boolean> = _isCheckingUsername.asStateFlow()
 
     private fun checkUsername(username: String) {
         checkUsernameJob?.cancel()
@@ -85,8 +86,10 @@ class RegisterProfileViewModel @Inject constructor(
             val result = authRepository.register(userData)
             when (result) {
                 is AuthResult.Success -> {
-                    tokenManager.saveToken(result.data)
-                    _navigationEvent.emit(Unit)
+                    val (token, userId) = result.data
+                    tokenManager.saveToken(token)
+                    userIdManager.saveUserId(userId)
+                    _navigationEvent.emit(RegisterNavigation.GoToAvatarUpload)
                 }
                 is AuthResult.Error -> {
                     _uiState.value = RegisterUiState.Error(result.message)
@@ -106,4 +109,8 @@ sealed class RegisterUiState {
     object Idle : RegisterUiState()
     object Loading : RegisterUiState()
     data class Error(val message: String) : RegisterUiState()
+}
+
+sealed class RegisterNavigation {
+    object GoToAvatarUpload : RegisterNavigation()
 }

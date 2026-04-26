@@ -3,6 +3,7 @@ package com.example.krug.ui.screens.auth
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.TokenManager
+import com.example.krug.data.local.UserIdManager
 import com.example.krug.data.model.auth.AuthResult
 import com.example.krug.data.model.auth.VerifyResult
 import com.example.krug.data.repository.AuthRepository
@@ -18,7 +19,8 @@ import javax.inject.Inject
 @HiltViewModel
 class VerifyCodeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val tokenManager: TokenManager
+    private val tokenManager: TokenManager,
+    private val userIdManager: UserIdManager
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<VerifyCodeUiState>(VerifyCodeUiState.Idle)
@@ -32,8 +34,6 @@ class VerifyCodeViewModel @Inject constructor(
     val navigationEvent = _navigationEvent.asSharedFlow()
 
     fun verifyCode(email: String, code: String) {
-        if (_uiState.value is VerifyCodeUiState.Loading) return
-
         viewModelScope.launch {
             _uiState.value = VerifyCodeUiState.Loading
             val result = authRepository.verifyCode(email, code)
@@ -43,6 +43,7 @@ class VerifyCodeViewModel @Inject constructor(
                     when (val verifyResult = result.data) {
                         is VerifyResult.LoginSuccess -> {
                             tokenManager.saveToken(verifyResult.token)
+                            userIdManager.saveUserId(verifyResult.userId)
                             _navigationEvent.emit(VerifyNavigation.GoToMain)
                         }
                         is VerifyResult.RegisterNeeded -> {

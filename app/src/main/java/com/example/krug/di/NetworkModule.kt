@@ -1,6 +1,7 @@
 package com.example.krug.di
 
 import com.example.krug.data.network.AuthApi
+import com.example.krug.utils.Constants.BASE_URL
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
@@ -14,8 +15,6 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
-
-    private const val BASE_URL = "http://10.63.118.158:8080"
     @Provides
     @Singleton
     fun provideOkHttpClient(): OkHttpClient {

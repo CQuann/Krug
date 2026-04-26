@@ -22,6 +22,7 @@ fun RegisterProfileScreen(
     username: String,
     birthday: String,
     usernameAvailable: Boolean?,
+    isCheckingUsername: Boolean,
     onDisplayNameChange: (String) -> Unit,
     onUsernameChange: (String) -> Unit,
     onBirthdayChange: (String) -> Unit,
@@ -31,7 +32,6 @@ fun RegisterProfileScreen(
     var displayNameError by remember { mutableStateOf<String?>(null) }
     var usernameError by remember { mutableStateOf<String?>(null) }
     var showDatePicker by remember { mutableStateOf(false) }
-    var isCheckingUsername by remember { mutableStateOf(false) }
 
     val datePickerState = rememberDatePickerState()
     var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
@@ -71,7 +71,6 @@ fun RegisterProfileScreen(
             value = username,
             onValueChange = { newUsername ->
                 onUsernameChange(newUsername)
-                // Проверка длины в реальном времени
                 if (newUsername.isNotBlank() && newUsername.length < 3) {
                     usernameError = "Слишком короткий никнейм (мин. 3 символа)"
                 } else {
@@ -93,7 +92,6 @@ fun RegisterProfileScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        // Поле даты рождения с кнопкой выбора
         OutlinedTextField(
             value = birthday,
             onValueChange = {},
@@ -143,13 +141,12 @@ fun RegisterProfileScreen(
         if (uiState is RegisterUiState.Error) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = (uiState as RegisterUiState.Error).message,
+                text = uiState.message,
                 color = MaterialTheme.colorScheme.error
             )
         }
     }
 
-    // DatePickerDialog
     if (showDatePicker) {
         DatePickerDialog(
             onDismissRequest = { showDatePicker = false },
@@ -178,18 +175,19 @@ fun RegisterProfileScreen(
 @Preview(showBackground = true)
 @Composable
 fun RegisterProfileScreenPreview() {
-//    KrugTheme {
+    KrugTheme {
         RegisterProfileScreen(
             uiState = RegisterUiState.Idle,
             displayName = "",
             username = "",
             birthday = "",
             usernameAvailable = null,
+            isCheckingUsername = false,
             onDisplayNameChange = {},
             onUsernameChange = {},
             onBirthdayChange = {},
             onRegisterClick = {},
             onResetError = {}
         )
-//    }
+    }
 }

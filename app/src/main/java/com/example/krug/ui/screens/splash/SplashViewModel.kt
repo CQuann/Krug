@@ -4,7 +4,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.TokenManager
-import com.example.krug.data.model.auth.AuthResult
+import com.example.krug.data.model.DataResult
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -31,9 +31,9 @@ class SplashViewModel @Inject constructor(
                 return@launch
             }
             Log.d("Splash", "Calling validateToken...")
-            val result = authRepository.validateToken(token)
+            val result = authRepository.validateToken()
             Log.d("Splash", "Result: $result")
-            if (result is AuthResult.Success && result.data) {
+            if (result is DataResult.Success && result.data) {
                 _navigationEvent.emit(SplashNavigation.GoToMain)
             } else {
                 tokenManager.clearToken()

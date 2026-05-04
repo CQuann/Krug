@@ -1,6 +1,7 @@
 package com.example.krug.di
 
 import com.example.krug.data.network.AuthApi
+import com.example.krug.data.network.EventApi
 import com.example.krug.utils.Constants.BASE_URL
 import dagger.Module
 import dagger.Provides
@@ -15,10 +16,12 @@ import javax.inject.Singleton
 @Module
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
+
     @Provides
     @Singleton
-    fun provideOkHttpClient(): OkHttpClient {
+    fun provideOkHttpClient(authInterceptor: AuthInterceptor): OkHttpClient {
         return OkHttpClient.Builder()
+            .addInterceptor(authInterceptor)
             .addInterceptor(HttpLoggingInterceptor().apply {
                 level = HttpLoggingInterceptor.Level.BODY
             })
@@ -39,5 +42,11 @@ object NetworkModule {
     @Singleton
     fun provideAuthApi(retrofit: Retrofit): AuthApi {
         return retrofit.create(AuthApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideEventApi(retrofit: Retrofit): EventApi {
+        return retrofit.create(EventApi::class.java)
     }
 }

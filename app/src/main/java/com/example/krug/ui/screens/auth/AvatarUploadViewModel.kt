@@ -4,7 +4,7 @@ import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.TokenManager
-import com.example.krug.data.model.auth.AuthResult
+import com.example.krug.data.model.DataResult
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -17,8 +17,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AvatarUploadViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
-    private val tokenManager: TokenManager
+    private val authRepository: AuthRepository
 ) : ViewModel() {
 
     private val _avatarUri = MutableStateFlow<Uri?>(null)
@@ -41,11 +40,11 @@ class AvatarUploadViewModel @Inject constructor(
             _uiState.value = AvatarUploadUiState.Loading
             val result = authRepository.uploadAvatar(uri)
             when (result) {
-                is AuthResult.Success -> {
+                is DataResult.Success -> {
                     _uiState.value = AvatarUploadUiState.Success
                     _navigationEvent.emit(Unit)
                 }
-                is AuthResult.Error -> {
+                is DataResult.Error -> {
                     _uiState.value = AvatarUploadUiState.Error(result.message)
                 }
             }

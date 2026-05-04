@@ -15,12 +15,11 @@ import com.example.krug.ui.theme.KrugTheme
 fun LoginEmailScreen(
     email: String,
     uiState: LoginEmailUiState,
+    emailError: String?,
     onEmailChange: (String) -> Unit,
     onSendCode: () -> Unit,
     onResetError: () -> Unit
 ) {
-    var localEmailError by remember { mutableStateOf<String?>(null) }
-
     Column(
         modifier = Modifier.fillMaxSize().padding(16.dp),
         verticalArrangement = Arrangement.Center,
@@ -30,16 +29,12 @@ fun LoginEmailScreen(
             value = email,
             onValueChange = { newEmail ->
                 onEmailChange(newEmail)
-                // Простейшая проверка для подсказки пользователю (не обязательная для отправки)
-                localEmailError = if (newEmail.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
-                    "Введите корректный email"
-                } else null
                 onResetError()
             },
             label = { Text("Email") },
-            isError = localEmailError != null || (uiState is LoginEmailUiState.Error),
+            isError = emailError != null || (uiState is LoginEmailUiState.Error),
             supportingText = {
-                if (localEmailError != null) Text(localEmailError!!)
+                if (emailError != null) Text(emailError)
                 else if (uiState is LoginEmailUiState.Error) Text(uiState.message)
             },
             keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
@@ -49,7 +44,7 @@ fun LoginEmailScreen(
 
         Button(
             onClick = onSendCode,
-            enabled = uiState !is LoginEmailUiState.Loading && localEmailError == null,
+            enabled = uiState !is LoginEmailUiState.Loading && emailError == null,
             modifier = Modifier.fillMaxWidth()
         ) {
             if (uiState is LoginEmailUiState.Loading) {
@@ -70,7 +65,8 @@ fun LoginEmailScreenPreview() {
             uiState = LoginEmailUiState.Idle,
             onEmailChange = {},
             onSendCode = {},
-            onResetError = {}
+            onResetError = {},
+            emailError = ""
         )
     }
 }

@@ -52,6 +52,7 @@ fun SetupNavGraph() {
             val viewModel: LoginEmailViewModel = hiltViewModel()
             val email by viewModel.email.collectAsStateWithLifecycle()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val emailError by viewModel.emailError.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
                 viewModel.navigationEvent.collect { email ->
@@ -64,7 +65,8 @@ fun SetupNavGraph() {
                 uiState = uiState,
                 onEmailChange = { viewModel.updateEmail(it) },
                 onSendCode = { viewModel.sendCode() },
-                onResetError = { viewModel.resetError() }
+                onResetError = { viewModel.resetError() },
+                emailError = emailError
             )
         }
 
@@ -115,6 +117,8 @@ fun SetupNavGraph() {
             val birthday by viewModel.birthday.collectAsStateWithLifecycle()
             val usernameAvailable by viewModel.usernameAvailable.collectAsStateWithLifecycle()
             val isCheckingUsername by viewModel.isCheckingUsername.collectAsStateWithLifecycle()
+            val displayNameError by viewModel.displayNameError.collectAsStateWithLifecycle()
+            val usernameError by viewModel.usernameError.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
                 viewModel.navigationEvent.collect { navigation ->
@@ -139,7 +143,9 @@ fun SetupNavGraph() {
                 onUsernameChange = { viewModel.updateUsername(it) },
                 onBirthdayChange = { viewModel.updateBirthday(it) },
                 onRegisterClick = { viewModel.register(email) },
-                onResetError = { viewModel.resetError() }
+                onResetError = { viewModel.resetError() },
+                displayNameError = displayNameError,
+                usernameError = usernameError
             )
         }
 

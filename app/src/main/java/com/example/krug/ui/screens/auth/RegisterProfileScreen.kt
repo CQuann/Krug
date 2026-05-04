@@ -1,20 +1,16 @@
 package com.example.krug.ui.screens.auth
 
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.tooling.preview.Preview
+import com.example.krug.ui.components.DateTimePickerField
 import com.example.krug.ui.theme.KrugTheme
-import java.text.SimpleDateFormat
-import java.util.*
+import java.time.LocalDate
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun RegisterProfileScreen(
     uiState: RegisterUiState,
@@ -23,29 +19,19 @@ fun RegisterProfileScreen(
     birthday: String,
     usernameAvailable: Boolean?,
     isCheckingUsername: Boolean,
+    displayNameError: String?,
+    usernameError: String?,
     onDisplayNameChange: (String) -> Unit,
     onUsernameChange: (String) -> Unit,
     onBirthdayChange: (String) -> Unit,
     onRegisterClick: () -> Unit,
     onResetError: () -> Unit
 ) {
-    var displayNameError by remember { mutableStateOf<String?>(null) }
-    var usernameError by remember { mutableStateOf<String?>(null) }
-    var showDatePicker by remember { mutableStateOf(false) }
-
-    val datePickerState = rememberDatePickerState()
-    var selectedDateMillis by remember { mutableStateOf<Long?>(null) }
-
-    val formattedDate = remember(selectedDateMillis) {
-        selectedDateMillis?.let {
-            val date = Date(it)
-            SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(date)
-        } ?: ""
+    val birthdayDate = remember(birthday) {
+        if (birthday.isNotBlank()) LocalDate.parse(birthday) else null
     }
 
     LaunchedEffect(displayName, username) {
-        displayNameError = null
-        usernameError = null
         onResetError()
     }
 
@@ -62,27 +48,20 @@ fun RegisterProfileScreen(
             onValueChange = onDisplayNameChange,
             label = { Text("Имя") },
             isError = displayNameError != null,
-            supportingText = { if (displayNameError != null) Text(displayNameError!!) },
+            supportingText = { displayNameError?.let { Text(it) } },
             modifier = Modifier.fillMaxWidth()
         )
         Spacer(modifier = Modifier.height(8.dp))
 
         OutlinedTextField(
             value = username,
-            onValueChange = { newUsername ->
-                onUsernameChange(newUsername)
-                if (newUsername.isNotBlank() && newUsername.length < 3) {
-                    usernameError = "Слишком короткий никнейм (мин. 3 символа)"
-                } else {
-                    usernameError = null
-                }
-            },
+            onValueChange = onUsernameChange,
             label = { Text("Никнейм") },
             isError = usernameError != null,
             supportingText = {
                 when {
-                    usernameError != null -> Text(usernameError!!)
-                    isCheckingUsername -> Text("Проверка...", color = Color.Gray)
+                    usernameError != null -> Text(usernameError)
+                    isCheckingUsername -> Text("Проверка...", color = MaterialTheme.colorScheme.onSurfaceVariant)
                     usernameAvailable == true -> Text("Доступен")
                     usernameAvailable == false -> Text("Уже занят")
                     else -> Text(" ")
@@ -92,42 +71,22 @@ fun RegisterProfileScreen(
         )
         Spacer(modifier = Modifier.height(8.dp))
 
-        OutlinedTextField(
-            value = birthday,
-            onValueChange = {},
-            label = { Text("Дата рождения (ГГГГ-ММ-ДД)") },
-            readOnly = true,
-            trailingIcon = {
-                IconButton(onClick = { showDatePicker = !showDatePicker }) {
-                    Icon(
-                        imageVector = Icons.Default.DateRange,
-                        contentDescription = "Select date"
-                    )
-                }
+        DateTimePickerField(
+            label = "Дата рождения",
+            date = birthdayDate,
+            time = null,
+            onDateSelected = { newDate ->
+                onBirthdayChange(newDate?.toString() ?: "")
             },
+            onTimeSelected = {},
+            enableTime = false,
             modifier = Modifier.fillMaxWidth()
         )
+
         Spacer(modifier = Modifier.height(24.dp))
 
         Button(
-            onClick = {
-                var valid = true
-                if (displayName.isBlank()) {
-                    displayNameError = "Введите отображаемое имя"
-                    valid = false
-                }
-                if (username.isBlank()) {
-                    usernameError = "Введите никнейм"
-                    valid = false
-                } else if (username.length < 3) {
-                    usernameError = "Слишком короткий никнейм"
-                    valid = false
-                } else if (usernameAvailable != true) {
-                    usernameError = "Никнейм недоступен"
-                    valid = false
-                }
-                if (valid) onRegisterClick()
-            },
+            onClick = onRegisterClick,
             enabled = uiState !is RegisterUiState.Loading,
             modifier = Modifier.fillMaxWidth()
         ) {
@@ -146,30 +105,6 @@ fun RegisterProfileScreen(
             )
         }
     }
-
-    if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = {
-                    selectedDateMillis = datePickerState.selectedDateMillis
-                    if (selectedDateMillis != null) {
-                        onBirthdayChange(formattedDate)
-                    }
-                    showDatePicker = false
-                }) {
-                    Text("OK")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Отмена")
-                }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
 }
 
 @Preview(showBackground = true)
@@ -183,6 +118,8 @@ fun RegisterProfileScreenPreview() {
             birthday = "",
             usernameAvailable = null,
             isCheckingUsername = false,
+            displayNameError = null,
+            usernameError = null,
             onDisplayNameChange = {},
             onUsernameChange = {},
             onBirthdayChange = {},

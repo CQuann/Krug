@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.TokenManager
 import com.example.krug.data.local.UserIdManager
-import com.example.krug.data.model.auth.AuthResult
+import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.UserData
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -37,6 +37,16 @@ class RegisterProfileViewModel @Inject constructor(
     private val _usernameAvailable = MutableStateFlow<Boolean?>(null)
     val usernameAvailable: StateFlow<Boolean?> = _usernameAvailable.asStateFlow()
 
+    private val _isCheckingUsername = MutableStateFlow(false)
+    val isCheckingUsername: StateFlow<Boolean> = _isCheckingUsername.asStateFlow()
+
+    // Ошибки валидации, управляются ViewModel
+    private val _displayNameError = MutableStateFlow<String?>(null)
+    val displayNameError: StateFlow<String?> = _displayNameError.asStateFlow()
+
+    private val _usernameError = MutableStateFlow<String?>(null)
+    val usernameError: StateFlow<String?> = _usernameError.asStateFlow()
+
     private val _uiState = MutableStateFlow<RegisterUiState>(RegisterUiState.Idle)
     val uiState: StateFlow<RegisterUiState> = _uiState.asStateFlow()
 
@@ -45,15 +55,18 @@ class RegisterProfileViewModel @Inject constructor(
 
     private var checkUsernameJob: Job? = null
 
-    private val _isCheckingUsername = MutableStateFlow(false)
-    val isCheckingUsername: StateFlow<Boolean> = _isCheckingUsername.asStateFlow()
-
     fun updateDisplayName(name: String) {
         _displayName.value = name
+        _displayNameError.value = if (name.isBlank()) "Введите имя" else null
     }
 
     fun updateUsername(name: String) {
         _username.value = name
+        _usernameError.value = when {
+            name.isBlank() -> "Введите никнейм"
+            name.length < 3 -> "Слишком короткий никнейм (мин. 3 символа)"
+            else -> null
+        }
         checkUsername(name)
     }
 
@@ -63,7 +76,7 @@ class RegisterProfileViewModel @Inject constructor(
 
     private fun checkUsername(username: String) {
         checkUsernameJob?.cancel()
-        if (username.isBlank()) {
+        if (username.isBlank() || username.length < 3) {
             _usernameAvailable.value = null
             _isCheckingUsername.value = false
             return
@@ -72,26 +85,43 @@ class RegisterProfileViewModel @Inject constructor(
         checkUsernameJob = viewModelScope.launch {
             delay(500)
             val result = authRepository.checkUsername(username)
-            val available = (result as? AuthResult.Success)?.data ?: false
+            val available = (result as? DataResult.Success)?.data ?: false
             _usernameAvailable.value = available
             _isCheckingUsername.value = false
         }
     }
 
     fun register(email: String) {
+        // Финальная проверка
+        var hasError = false
+        if (_displayName.value.isBlank()) {
+            _displayNameError.value = "Введите имя"
+            hasError = true
+        }
+        if (_username.value.isBlank()) {
+            _usernameError.value = "Введите никнейм"
+            hasError = true
+        } else if (_username.value.length < 3) {
+            _usernameError.value = "Слишком короткий никнейм"
+            hasError = true
+        } else if (_usernameAvailable.value != true) {
+            _usernameError.value = "Никнейм недоступен"
+            hasError = true
+        }
+        if (hasError) return
+
         viewModelScope.launch {
             _uiState.value = RegisterUiState.Loading
             val birthdayValue = _birthday.value.takeIf { it.isNotBlank() }
             val userData = UserData(email, _displayName.value, birthdayValue, _username.value)
-            val result = authRepository.register(userData)
-            when (result) {
-                is AuthResult.Success -> {
+            when (val result = authRepository.register(userData)) {
+                is DataResult.Success -> {
                     val (token, userId) = result.data
                     tokenManager.saveToken(token)
                     userIdManager.saveUserId(userId)
                     _navigationEvent.emit(RegisterNavigation.GoToAvatarUpload)
                 }
-                is AuthResult.Error -> {
+                is DataResult.Error -> {
                     _uiState.value = RegisterUiState.Error(result.message)
                 }
             }
@@ -110,7 +140,6 @@ sealed class RegisterUiState {
     object Loading : RegisterUiState()
     data class Error(val message: String) : RegisterUiState()
 }
-
 sealed class RegisterNavigation {
     object GoToAvatarUpload : RegisterNavigation()
 }

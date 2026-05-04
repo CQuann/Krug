@@ -10,6 +10,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
+import kotlinx.coroutines.runBlocking
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -23,7 +24,18 @@ class TokenManager @Inject constructor(
         private val TOKEN_KEY = stringPreferencesKey("auth_token")
     }
 
+    @Volatile
+    var cachedToken: String? = null
+        private set
+
+    init {
+        runBlocking {
+            cachedToken = getToken()
+        }
+    }
+
     suspend fun saveToken(token: String) {
+        cachedToken = token
         context.dataStore.edit { preferences ->
             preferences[TOKEN_KEY] = token
         }
@@ -42,6 +54,7 @@ class TokenManager @Inject constructor(
     }
 
     suspend fun clearToken() {
+        cachedToken = null
         context.dataStore.edit { preferences ->
             preferences.remove(TOKEN_KEY)
         }

@@ -2,7 +2,7 @@ package com.example.krug.ui.screens.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.krug.data.model.auth.AuthResult
+import com.example.krug.data.model.DataResult
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -24,29 +24,34 @@ class LoginEmailViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<LoginEmailUiState>(LoginEmailUiState.Idle)
     val uiState: StateFlow<LoginEmailUiState> = _uiState.asStateFlow()
 
+    private val _emailError = MutableStateFlow<String?>(null)
+    val emailError: StateFlow<String?> = _emailError.asStateFlow()
+
     private val _navigationEvent = MutableSharedFlow<String>()
     val navigationEvent = _navigationEvent.asSharedFlow()
 
     fun updateEmail(newEmail: String) {
         _email.value = newEmail
+        _emailError.value = if (newEmail.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
+            "Введите корректный email"
+        } else null
     }
 
     fun sendCode() {
         val currentEmail = _email.value
-        // Валидация email перед отправкой
         if (currentEmail.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(currentEmail).matches()) {
-            _uiState.value = LoginEmailUiState.Error("Введите корректный email")
+            _emailError.value = "Введите корректный email"
             return
         }
         viewModelScope.launch {
             _uiState.value = LoginEmailUiState.Loading
             val result = authRepository.requestCode(currentEmail)
             when (result) {
-                is AuthResult.Success -> {
+                is DataResult.Success -> {
                     _uiState.value = LoginEmailUiState.Idle
                     _navigationEvent.emit(currentEmail)
                 }
-                is AuthResult.Error -> {
+                is DataResult.Error -> {
                     _uiState.value = LoginEmailUiState.Error(result.message)
                 }
             }

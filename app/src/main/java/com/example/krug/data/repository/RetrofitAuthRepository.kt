@@ -5,7 +5,7 @@ import android.net.Uri
 import android.util.Log
 import com.example.krug.data.local.TokenManager
 import com.example.krug.data.model.*
-import com.example.krug.data.model.auth.AuthResult
+import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.auth.CheckUsernameRequest
 import com.example.krug.data.model.auth.EmailRequest
 import com.example.krug.data.model.auth.LogoutRequest
@@ -28,117 +28,114 @@ class RetrofitAuthRepository @Inject constructor(
     @ApplicationContext private val context: Context
 ) : AuthRepository {
 
-    override suspend fun requestCode(email: String): AuthResult<Unit> {
+    override suspend fun requestCode(email: String): DataResult<Unit> {
         return try {
             val response = authApi.requestCode(EmailRequest(email))
             if (response.success) {
-                AuthResult.Success(Unit)
+                DataResult.Success(Unit)
             } else {
-                AuthResult.Error(response.error ?: "Неизвестная ошибка")
+                DataResult.Error(response.error ?: "Неизвестная ошибка")
             }
         } catch (e: Exception) {
-            AuthResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error("Ошибка сети: ${e.message}")
         }
     }
 
-    override suspend fun verifyCode(email: String, code: String): AuthResult<VerifyResult> {
+    override suspend fun verifyCode(email: String, code: String): DataResult<VerifyResult> {
         return try {
             val response = authApi.verifyCode(VerifyCodeRequest(email, code))
-            if (response.error != null) return AuthResult.Error(response.error)
+            if (response.error != null) return DataResult.Error(response.error)
             when {
                 response.token != null && !response.isNewUser -> {
-                    AuthResult.Success(VerifyResult.LoginSuccess(response.token, response.userId ?: ""))
+                    DataResult.Success(VerifyResult.LoginSuccess(response.token, response.userId ?: ""))
                 }
                 response.isNewUser -> {
-                    AuthResult.Success(VerifyResult.RegisterNeeded)
+                    DataResult.Success(VerifyResult.RegisterNeeded)
                 }
-                else -> AuthResult.Error("Неизвестный ответ сервера")
+                else -> DataResult.Error("Неизвестный ответ сервера")
             }
         } catch (e: Exception) {
-            AuthResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error("Ошибка сети: ${e.message}")
         }
     }
 
-    override suspend fun register(userData: UserData): AuthResult<Pair<String, String>> {
+    override suspend fun register(userData: UserData): DataResult<Pair<String, String>> {
         return try {
             val request = RegisterRequest(userData)
             val response = authApi.register(request)
             if (response.token != null && response.userId != null) {
-                AuthResult.Success(Pair(response.token, response.userId))
+                DataResult.Success(Pair(response.token, response.userId))
             } else {
-                AuthResult.Error(response.error ?: "Ошибка регистрации")
+                DataResult.Error(response.error ?: "Ошибка регистрации")
             }
         } catch (e: Exception) {
-            AuthResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error("Ошибка сети: ${e.message}")
         }
     }
 
-    override suspend fun checkUsername(username: String): AuthResult<Boolean> {
+    override suspend fun checkUsername(username: String): DataResult<Boolean> {
         return try {
             val response = authApi.checkUsername(CheckUsernameRequest(username))
-            AuthResult.Success(response.available)
+            DataResult.Success(response.available)
         } catch (e: Exception) {
-            AuthResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error("Ошибка сети: ${e.message}")
         }
     }
 
-    override suspend fun validateToken(token: String): AuthResult<Boolean> {
-        Log.d("AuthRepo", "validateToken called with token: $token")
+    override suspend fun validateToken(): DataResult<Boolean> {
         return try {
-            val response = authApi.validateToken("Bearer $token")
-            Log.d("AuthRepo", "Response success: ${response.success}")
-            AuthResult.Success(response.success)
+            val response = authApi.validateToken()
+            DataResult.Success(response.success)
         } catch (e: Exception) {
-            Log.e("AuthRepo", "Error: ${e.message}", e)
-            AuthResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error("Ошибка сети: ${e.message}")
         }
     }
 
-    override suspend fun logout(token: String): AuthResult<Unit> {
+    override suspend fun logout(token: String): DataResult<Unit> {
         return try {
             val response = authApi.logout(LogoutRequest(token))
-            if (response.success) AuthResult.Success(Unit)
-            else AuthResult.Error(response.error ?: "Ошибка выхода")
+            if (response.success) DataResult.Success(Unit)
+            else DataResult.Error(response.error ?: "Ошибка выхода")
         } catch (e: Exception) {
-            AuthResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error("Ошибка сети: ${e.message}")
         }
     }
 
-    override suspend fun getUserData(token: String): AuthResult<UserData> {
+    override suspend fun getUserData(): DataResult<UserData> {
         return try {
-            val response = authApi.getUserData("Bearer $token")
-            AuthResult.Success(response.user)
+            val response = authApi.getUserData()
+            DataResult.Success(response.user)
         } catch (e: Exception) {
-            AuthResult.Error("Ошибка получения данных: ${e.message}")
+            DataResult.Error("Ошибка получения данных: ${e.message}")
         }
     }
 
-    override suspend fun editUserData(token: String, userData: UserData): AuthResult<Unit> {
+    override suspend fun editUserData(userData: UserData): DataResult<Unit> {
         return try {
-            val response = authApi.editUserData("Bearer $token", UserEditRequest(userData))
-            if (response.success) AuthResult.Success(Unit)
-            else AuthResult.Error(response.error ?: "Ошибка редактирования")
+            val response = authApi.editUserData(UserEditRequest(userData))
+            if (response.success) DataResult.Success(Unit)
+            else DataResult.Error(response.error ?: "Ошибка редактирования")
         } catch (e: Exception) {
-            AuthResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error("Ошибка сети: ${e.message}")
         }
     }
 
-    override suspend fun uploadAvatar(uri: Uri): AuthResult<String> {
+    override suspend fun uploadAvatar(uri: Uri): DataResult<String> {
         return try {
-            val token = tokenManager.getToken() ?: return AuthResult.Error("Не авторизован")
-            val file = ImageUtils.uriToFile(context, uri) ?: return AuthResult.Error("Не удалось получить файл")
+            tokenManager.getToken() ?: return DataResult.Error("Не авторизован")
+            val file = ImageUtils.uriToFile(context, uri)
+                ?: return DataResult.Error("Не удалось получить файл")
             val compressedFile = ImageUtils.compressImage(file, 1024)
             val requestBody = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("avatar", compressedFile.name, requestBody)
-            val response = authApi.uploadAvatar("Bearer $token", part)
+            val response = authApi.uploadAvatar(part)
             if (response.success) {
-                AuthResult.Success("")
+                DataResult.Success("")
             } else {
-                val errorMsg = response.error ?: "Ошибка загрузки"
-                AuthResult.Error(errorMsg)
+                DataResult.Error(response.error ?: "Ошибка загрузки")
             }
         } catch (e: Exception) {
-            AuthResult.Error("Ошибка: ${e.message}")
+            DataResult.Error("Ошибка: ${e.message}")
         }
     }
 }

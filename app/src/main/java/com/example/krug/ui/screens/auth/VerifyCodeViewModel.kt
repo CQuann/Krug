@@ -4,7 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.TokenManager
 import com.example.krug.data.local.UserIdManager
-import com.example.krug.data.model.auth.AuthResult
+import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.auth.VerifyResult
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,7 +38,7 @@ class VerifyCodeViewModel @Inject constructor(
             _uiState.value = VerifyCodeUiState.Loading
             val result = authRepository.verifyCode(email, code)
             when (result) {
-                is AuthResult.Success -> {
+                is DataResult.Success -> {
                     _uiState.value = VerifyCodeUiState.Idle
                     when (val verifyResult = result.data) {
                         is VerifyResult.LoginSuccess -> {
@@ -51,7 +51,7 @@ class VerifyCodeViewModel @Inject constructor(
                         }
                     }
                 }
-                is AuthResult.Error -> {
+                is DataResult.Error -> {
                     _uiState.value = VerifyCodeUiState.Error(result.message)
                 }
             }

@@ -1,25 +1,12 @@
 package com.example.krug.data.network
 
-import com.example.krug.data.model.*
-import com.example.krug.data.model.auth.AvatarUploadResponse
-import com.example.krug.data.model.auth.CheckUsernameRequest
-import com.example.krug.data.model.auth.CheckUsernameResponse
-import com.example.krug.data.model.auth.EmailRequest
-import com.example.krug.data.model.auth.LogoutRequest
-import com.example.krug.data.model.auth.LogoutResponse
-import com.example.krug.data.model.auth.RegisterRequest
-import com.example.krug.data.model.auth.RegisterResponse
-import com.example.krug.data.model.auth.RequestCodeResponse
-import com.example.krug.data.model.auth.VerifyCodeRequest
-import com.example.krug.data.model.auth.VerifyCodeResponse
+import com.example.krug.data.model.TokenValidateResponse
+import com.example.krug.data.model.UserDataResponse
+import com.example.krug.data.model.UserEditRequest
+import com.example.krug.data.model.UserEditResponse
+import com.example.krug.data.model.auth.*
 import okhttp3.MultipartBody
-import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.Header
-import retrofit2.http.Multipart
-import retrofit2.http.POST
-import retrofit2.http.Part
+import retrofit2.http.*
 
 interface AuthApi {
     @POST("auth/request-code")
@@ -32,7 +19,7 @@ interface AuthApi {
     suspend fun register(@Body request: RegisterRequest): RegisterResponse
 
     @POST("auth/token-validate")
-    suspend fun validateToken(@Header("Authorization") token: String): TokenValidateResponse
+    suspend fun validateToken(): TokenValidateResponse
 
     @POST("auth/logout")
     suspend fun logout(@Body request: LogoutRequest): LogoutResponse
@@ -41,18 +28,12 @@ interface AuthApi {
     suspend fun checkUsername(@Body request: CheckUsernameRequest): CheckUsernameResponse
 
     @GET("user/get-data")
-    suspend fun getUserData(@Header("Authorization") token: String): UserDataResponse
+    suspend fun getUserData(): UserDataResponse
 
     @POST("user/edit")
-    suspend fun editUserData(
-        @Header("Authorization") token: String,
-        @Body request: UserEditRequest
-    ): UserEditResponse
+    suspend fun editUserData(@Body request: UserEditRequest): UserEditResponse
 
     @Multipart
     @POST("user/avatar")
-    suspend fun uploadAvatar(
-        @Header("Authorization") token: String,
-        @Part avatar: MultipartBody.Part
-    ): AvatarUploadResponse
+    suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): AvatarUploadResponse
 }

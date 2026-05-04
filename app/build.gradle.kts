@@ -81,4 +81,6 @@ dependencies {
 
     implementation(libs.coil.compose)
     implementation(libs.androidx.activity.compose.v182)
+
+    implementation(libs.kotlinx.datetime)
 }

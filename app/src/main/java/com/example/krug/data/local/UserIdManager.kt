@@ -13,7 +13,7 @@ import kotlinx.coroutines.flow.map
 import javax.inject.Inject
 import javax.inject.Singleton
 
-private val Context.userIdDataStore: DataStore<Preferences> by preferencesDataStore(name = "user_id")
+private val Context.userIdDataStore: DataStore<Preferences> by preferencesDataStore(name = "auth")
 
 @Singleton
 class UserIdManager @Inject constructor(

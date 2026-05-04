@@ -4,9 +4,8 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.TokenManager
 import com.example.krug.data.local.UserIdManager
-import com.example.krug.data.model.auth.AuthResult
+import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.UserData
-import com.example.krug.data.model.UserDataResponse
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -44,18 +43,13 @@ class MainAppViewModel @Inject constructor(
     fun loadUserData() {
         viewModelScope.launch {
             _isLoading.value = true
-            val token = tokenManager.getToken()
-            if (token == null) {
-                _isLoading.value = false
-                return@launch
-            }
-            val result = authRepository.getUserData(token)
+            val result = authRepository.getUserData()
             when (result) {
-                is AuthResult.Success -> {
+                is DataResult.Success -> {
                     _userData.value = result.data
                     _error.value = null
                 }
-                is AuthResult.Error -> {
+                is DataResult.Error -> {
                     _error.value = result.message
                 }
             }

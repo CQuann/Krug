@@ -1,5 +1,6 @@
 package com.example.krug.ui.screens.main
 
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
@@ -34,7 +35,8 @@ fun MainAppScreen(
     isLoading: Boolean,
     error: String?,
     onRefresh: () -> Unit,
-    onCreateEventClick: () -> Unit
+    onCreateEventClick: () -> Unit,
+    onEditProfileClick: () -> Unit
 ) {
     val avatarUrl =
         remember(userId) { if (userId != null) AvatarUrlProvider.build(userId) else null }
@@ -58,7 +60,12 @@ fun MainAppScreen(
                             Icon(
                                 Icons.Default.Person,
                                 contentDescription = "Avatar",
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clickable {
+                                        onEditProfileClick()
+                                    }
+
                             )
                         }
                     }

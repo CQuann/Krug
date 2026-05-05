@@ -2,9 +2,10 @@ package com.example.krug.ui.screens.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.krug.data.local.TokenManager
+import com.example.krug.data.local.SessionManager
+import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.UserData
-import com.example.krug.data.model.auth.AuthResult
+
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -16,7 +17,7 @@ import javax.inject.Inject
 @HiltViewModel
 class EditProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val tokenManager: TokenManager
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _userData = MutableStateFlow<UserData?>(null)
@@ -24,13 +25,13 @@ class EditProfileViewModel @Inject constructor(
 
     fun loadUser(){
         viewModelScope.launch {
-            val token = tokenManager.getToken() ?: return@launch
+            val token = sessionManager.getToken() ?: return@launch
 
-            when (val result = authRepository.getUserData(token)){
-                is AuthResult.Success -> {
+            when (val result = authRepository.getUserData()){
+                is DataResult.Success -> {
                     _userData.value = result.data
                 }
-                is AuthResult.Error -> {
+                is DataResult.Error -> {
 
                 }
             }
@@ -45,10 +46,9 @@ class EditProfileViewModel @Inject constructor(
         birthday: String
     ) {
         viewModelScope.launch {
-            val token = tokenManager.getToken() ?: return@launch
+            val token = sessionManager.getToken() ?: return@launch
 
             val result = authRepository.editUserData(
-                token = token,
                 userData = UserData(
                     email = email,
                     display_name = displayName,
@@ -58,10 +58,10 @@ class EditProfileViewModel @Inject constructor(
             )
 
             when (result) {
-                is AuthResult.Success -> {
+                is DataResult.Success -> {
                     loadUser()
                 }
-                is AuthResult.Error -> {
+                is DataResult.Error -> {
 
                 }
             }

@@ -93,7 +93,7 @@ fun EditProfile(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.Top
         ) {
-            Image(painter = painterResource(R.drawable.ex_face),
+            Image(painter = painterResource(R.drawable.p),
                 contentDescription = "Фото профиля",
                 modifier = Modifier
                     .size(120.dp)

@@ -2,8 +2,7 @@ package com.example.krug.ui.screens.main
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.krug.data.local.TokenManager
-import com.example.krug.data.local.UserIdManager
+import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.UserData
 import com.example.krug.data.repository.AuthRepository
@@ -17,8 +16,7 @@ import javax.inject.Inject
 @HiltViewModel
 class MainAppViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val tokenManager: TokenManager,
-    private val userIdManager: UserIdManager
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _userId = MutableStateFlow<String?>(null)
@@ -35,7 +33,7 @@ class MainAppViewModel @Inject constructor(
 
     init {
         viewModelScope.launch {
-            _userId.value = userIdManager.getUserId()
+            _userId.value = sessionManager.getUserId()
             loadUserData()
         }
     }
@@ -43,12 +41,12 @@ class MainAppViewModel @Inject constructor(
     fun loadUserData() {
         viewModelScope.launch {
             _isLoading.value = true
-            val result = authRepository.getUserData()
-            when (result) {
+            when (val result = authRepository.getUserData()) {
                 is DataResult.Success -> {
                     _userData.value = result.data
                     _error.value = null
                 }
+
                 is DataResult.Error -> {
                     _error.value = result.message
                 }

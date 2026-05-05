@@ -2,8 +2,7 @@ package com.example.krug.ui.screens.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.krug.data.local.TokenManager
-import com.example.krug.data.local.UserIdManager
+import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.UserData
 import com.example.krug.data.repository.AuthRepository
@@ -21,8 +20,7 @@ import javax.inject.Inject
 @HiltViewModel
 class RegisterProfileViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val tokenManager: TokenManager,
-    private val userIdManager: UserIdManager
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val _displayName = MutableStateFlow("")
@@ -117,10 +115,11 @@ class RegisterProfileViewModel @Inject constructor(
             when (val result = authRepository.register(userData)) {
                 is DataResult.Success -> {
                     val (token, userId) = result.data
-                    tokenManager.saveToken(token)
-                    userIdManager.saveUserId(userId)
+                    sessionManager.saveToken(token)
+                    sessionManager.saveUserId(userId)
                     _navigationEvent.emit(RegisterNavigation.GoToAvatarUpload)
                 }
+
                 is DataResult.Error -> {
                     _uiState.value = RegisterUiState.Error(result.message)
                 }
@@ -140,6 +139,7 @@ sealed class RegisterUiState {
     object Loading : RegisterUiState()
     data class Error(val message: String) : RegisterUiState()
 }
+
 sealed class RegisterNavigation {
     object GoToAvatarUpload : RegisterNavigation()
 }

@@ -2,10 +2,10 @@ package com.example.krug.data.repository
 
 import android.content.Context
 import android.net.Uri
-import android.util.Log
-import com.example.krug.data.local.TokenManager
-import com.example.krug.data.model.*
+import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
+import com.example.krug.data.model.UserData
+import com.example.krug.data.model.UserEditRequest
 import com.example.krug.data.model.auth.CheckUsernameRequest
 import com.example.krug.data.model.auth.EmailRequest
 import com.example.krug.data.model.auth.LogoutRequest
@@ -24,7 +24,7 @@ import javax.inject.Singleton
 @Singleton
 class RetrofitAuthRepository @Inject constructor(
     private val authApi: AuthApi,
-    private val tokenManager: TokenManager,
+    private val sessionManager: SessionManager,
     @ApplicationContext private val context: Context
 ) : AuthRepository {
 
@@ -47,11 +47,18 @@ class RetrofitAuthRepository @Inject constructor(
             if (response.error != null) return DataResult.Error(response.error)
             when {
                 response.token != null && !response.isNewUser -> {
-                    DataResult.Success(VerifyResult.LoginSuccess(response.token, response.userId ?: ""))
+                    DataResult.Success(
+                        VerifyResult.LoginSuccess(
+                            response.token,
+                            response.userId ?: ""
+                        )
+                    )
                 }
+
                 response.isNewUser -> {
                     DataResult.Success(VerifyResult.RegisterNeeded)
                 }
+
                 else -> DataResult.Error("Неизвестный ответ сервера")
             }
         } catch (e: Exception) {
@@ -122,18 +129,15 @@ class RetrofitAuthRepository @Inject constructor(
 
     override suspend fun uploadAvatar(uri: Uri): DataResult<String> {
         return try {
-            tokenManager.getToken() ?: return DataResult.Error("Не авторизован")
+            sessionManager.getToken() ?: return DataResult.Error("Не авторизован")
             val file = ImageUtils.uriToFile(context, uri)
                 ?: return DataResult.Error("Не удалось получить файл")
             val compressedFile = ImageUtils.compressImage(file, 1024)
             val requestBody = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("avatar", compressedFile.name, requestBody)
             val response = authApi.uploadAvatar(part)
-            if (response.success) {
-                DataResult.Success("")
-            } else {
-                DataResult.Error(response.error ?: "Ошибка загрузки")
-            }
+            if (response.success) DataResult.Success("")
+            else DataResult.Error(response.error ?: "Ошибка загрузки")
         } catch (e: Exception) {
             DataResult.Error("Ошибка: ${e.message}")
         }

@@ -2,8 +2,7 @@ package com.example.krug.ui.screens.auth
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.krug.data.local.TokenManager
-import com.example.krug.data.local.UserIdManager
+import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.auth.VerifyResult
 import com.example.krug.data.repository.AuthRepository
@@ -19,8 +18,7 @@ import javax.inject.Inject
 @HiltViewModel
 class VerifyCodeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val tokenManager: TokenManager,
-    private val userIdManager: UserIdManager
+    private val sessionManager: SessionManager,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<VerifyCodeUiState>(VerifyCodeUiState.Idle)
@@ -36,21 +34,22 @@ class VerifyCodeViewModel @Inject constructor(
     fun verifyCode(email: String, code: String) {
         viewModelScope.launch {
             _uiState.value = VerifyCodeUiState.Loading
-            val result = authRepository.verifyCode(email, code)
-            when (result) {
+            when (val result = authRepository.verifyCode(email, code)) {
                 is DataResult.Success -> {
                     _uiState.value = VerifyCodeUiState.Idle
                     when (val verifyResult = result.data) {
                         is VerifyResult.LoginSuccess -> {
-                            tokenManager.saveToken(verifyResult.token)
-                            userIdManager.saveUserId(verifyResult.userId)
+                            sessionManager.saveToken(verifyResult.token)
+                            sessionManager.saveUserId(verifyResult.userId)
                             _navigationEvent.emit(VerifyNavigation.GoToMain)
                         }
+
                         is VerifyResult.RegisterNeeded -> {
                             _navigationEvent.emit(VerifyNavigation.GoToRegister(email))
                         }
                     }
                 }
+
                 is DataResult.Error -> {
                     _uiState.value = VerifyCodeUiState.Error(result.message)
                 }

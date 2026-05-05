@@ -3,7 +3,6 @@ package com.example.krug.ui.screens.auth
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.krug.data.local.TokenManager
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -38,12 +37,12 @@ class AvatarUploadViewModel @Inject constructor(
         val uri = _avatarUri.value ?: return
         viewModelScope.launch {
             _uiState.value = AvatarUploadUiState.Loading
-            val result = authRepository.uploadAvatar(uri)
-            when (result) {
+            when (val result = authRepository.uploadAvatar(uri)) {
                 is DataResult.Success -> {
                     _uiState.value = AvatarUploadUiState.Success
                     _navigationEvent.emit(Unit)
                 }
+
                 is DataResult.Error -> {
                     _uiState.value = AvatarUploadUiState.Error(result.message)
                 }

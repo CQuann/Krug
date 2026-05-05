@@ -2,9 +2,13 @@ package com.example.krug.data.repository
 
 import android.content.Context
 import android.net.Uri
-import com.example.krug.data.local.TokenManager
+import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
-import com.example.krug.data.model.event.*
+import com.example.krug.data.model.event.CreateEventRequest
+import com.example.krug.data.model.event.Event
+import com.example.krug.data.model.event.EventsListResponse
+import com.example.krug.data.model.event.StatusUpdateRequest
+import com.example.krug.data.model.event.UpdateEventRequest
 import com.example.krug.data.network.EventApi
 import com.example.krug.utils.ImageUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -17,7 +21,7 @@ import javax.inject.Singleton
 @Singleton
 class RetrofitEventRepository @Inject constructor(
     private val eventApi: EventApi,
-    private val tokenManager: TokenManager,
+    private val sessionManager: SessionManager,
     @ApplicationContext private val context: Context
 ) : EventRepository {
 
@@ -30,7 +34,11 @@ class RetrofitEventRepository @Inject constructor(
         }
     }
 
-    override suspend fun getEvents(status: String, limit: Int, offset: Int): DataResult<EventsListResponse> {
+    override suspend fun getEvents(
+        status: String,
+        limit: Int,
+        offset: Int
+    ): DataResult<EventsListResponse> {
         return try {
             val response = eventApi.getEvents(status, limit, offset)
             DataResult.Success(response)
@@ -79,7 +87,7 @@ class RetrofitEventRepository @Inject constructor(
 
     override suspend fun uploadEventAvatar(eventId: String, uri: Uri): DataResult<Unit> {
         return try {
-            tokenManager.getToken() ?: return DataResult.Error("Не авторизован")
+            sessionManager.getToken() ?: return DataResult.Error("Не авторизован")
             val file = ImageUtils.uriToFile(context, uri)
                 ?: return DataResult.Error("Не удалось получить файл")
             val compressedFile = ImageUtils.compressImage(file, 1024)

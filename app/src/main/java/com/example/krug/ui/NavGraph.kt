@@ -11,6 +11,11 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.example.krug.ui.screens.auth.*
+import com.example.krug.ui.screens.event.CreateEventNavigation
+import com.example.krug.ui.screens.event.CreateEventScreen
+import com.example.krug.ui.screens.event.CreateEventViewModel
+import com.example.krug.ui.screens.event.EventAvatarUploadScreen
+import com.example.krug.ui.screens.event.EventAvatarUploadViewModel
 import com.example.krug.ui.screens.main.MainAppScreen
 import com.example.krug.ui.screens.main.MainAppViewModel
 import com.example.krug.ui.screens.splash.SplashNavigation
@@ -22,6 +27,7 @@ fun SetupNavGraph() {
     val navController = rememberNavController()
     NavHost(navController, startDestination = Screen.Splash.route) {
 
+        // Splash
         composable(Screen.Splash.route) {
             val viewModel: SplashViewModel = hiltViewModel()
             val navigationEvent = viewModel.navigationEvent
@@ -34,6 +40,7 @@ fun SetupNavGraph() {
                                 popUpTo(Screen.Splash.route) { inclusive = true }
                             }
                         }
+
                         SplashNavigation.GoToLogin -> {
                             navController.navigate(Screen.LoginEmail.route) {
                                 popUpTo(Screen.Splash.route) { inclusive = true }
@@ -48,6 +55,7 @@ fun SetupNavGraph() {
             )
         }
 
+        // LoginEmail
         composable(Screen.LoginEmail.route) {
             val viewModel: LoginEmailViewModel = hiltViewModel()
             val email by viewModel.email.collectAsStateWithLifecycle()
@@ -70,6 +78,7 @@ fun SetupNavGraph() {
             )
         }
 
+        // VerifyCode
         composable(
             route = Screen.VerifyCode.route,
             arguments = listOf(navArgument("email") { type = NavType.StringType })
@@ -86,6 +95,7 @@ fun SetupNavGraph() {
                                 popUpTo(Screen.LoginEmail.route) { inclusive = true }
                             }
                         }
+
                         is VerifyNavigation.GoToRegister -> {
                             navController.navigate(
                                 Screen.RegisterProfile.passArgs(navigation.email)
@@ -103,6 +113,7 @@ fun SetupNavGraph() {
             )
         }
 
+        // Registration
         composable(
             route = Screen.RegisterProfile.route,
             arguments = listOf(
@@ -149,6 +160,7 @@ fun SetupNavGraph() {
             )
         }
 
+        // Uploading user's avatar
         composable(Screen.AvatarUpload.route) {
             val viewModel: AvatarUploadViewModel = hiltViewModel()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
@@ -171,6 +183,65 @@ fun SetupNavGraph() {
             )
         }
 
+        // Create event screen
+        composable(Screen.CreateEvent.route) {
+            val viewModel: CreateEventViewModel = hiltViewModel()
+            val formData by viewModel.formData.collectAsStateWithLifecycle()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val titleError by viewModel.titleError.collectAsStateWithLifecycle()
+
+            LaunchedEffect(Unit) {
+                viewModel.navigationEvent.collect { nav ->
+                    when (nav) {
+                        is CreateEventNavigation.GoToEventAvatarUpload ->
+                            navController.navigate(Screen.EventAvatarUpload.passArgs(nav.eventId))
+                    }
+                }
+            }
+
+            CreateEventScreen(
+                formData = formData,
+                uiState = uiState,
+                titleError = titleError,
+                onTitleChange = viewModel::updateTitle,
+                onDescriptionChange = viewModel::updateDescription,
+                onLocationChange = viewModel::updateLocation,
+                onStartDateChange = viewModel::updateStartDate,
+                onStartTimeChange = viewModel::updateStartTime,
+                onEndDateChange = viewModel::updateEndDate,
+                onEndTimeChange = viewModel::updateEndTime,
+                onColorChange = viewModel::updateColor,
+                onSaveClick = viewModel::createEvent
+            )
+        }
+
+        // Uploading event's avatar
+        composable(
+            route = Screen.EventAvatarUpload.route,
+            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val viewModel: EventAvatarUploadViewModel = hiltViewModel()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
+
+            LaunchedEffect(Unit) {
+                viewModel.navigationEvent.collect {
+                    navController.navigate(Screen.MainApp.route) {
+                        popUpTo(Screen.MainApp.route) { inclusive = true }
+                    }
+                }
+            }
+
+            EventAvatarUploadScreen(
+                uiState = uiState,
+                avatarUri = avatarUri,
+                onSetAvatarUri = viewModel::setAvatarUri,
+                onUploadAvatar = viewModel::uploadAvatar,
+                onSkip = viewModel::skip
+            )
+        }
+
+        // Main screen
         composable(Screen.MainApp.route) {
             val viewModel: MainAppViewModel = hiltViewModel()
             val userId by viewModel.userId.collectAsStateWithLifecycle()
@@ -183,7 +254,8 @@ fun SetupNavGraph() {
                 userData = userData,
                 isLoading = isLoading,
                 error = error,
-                onRefresh = { viewModel.loadUserData() }
+                onRefresh = { viewModel.loadUserData() },
+                onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) }
             )
         }
     }

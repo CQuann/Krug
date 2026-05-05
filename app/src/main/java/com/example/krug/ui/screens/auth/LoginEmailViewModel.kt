@@ -32,25 +32,30 @@ class LoginEmailViewModel @Inject constructor(
 
     fun updateEmail(newEmail: String) {
         _email.value = newEmail
-        _emailError.value = if (newEmail.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail).matches()) {
-            "Введите корректный email"
-        } else null
+        _emailError.value =
+            if (newEmail.isNotBlank() && !android.util.Patterns.EMAIL_ADDRESS.matcher(newEmail)
+                    .matches()
+            ) {
+                "Введите корректный email"
+            } else null
     }
 
     fun sendCode() {
         val currentEmail = _email.value
-        if (currentEmail.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(currentEmail).matches()) {
+        if (currentEmail.isBlank() || !android.util.Patterns.EMAIL_ADDRESS.matcher(currentEmail)
+                .matches()
+        ) {
             _emailError.value = "Введите корректный email"
             return
         }
         viewModelScope.launch {
             _uiState.value = LoginEmailUiState.Loading
-            val result = authRepository.requestCode(currentEmail)
-            when (result) {
+            when (val result = authRepository.requestCode(currentEmail)) {
                 is DataResult.Success -> {
                     _uiState.value = LoginEmailUiState.Idle
                     _navigationEvent.emit(currentEmail)
                 }
+
                 is DataResult.Error -> {
                     _uiState.value = LoginEmailUiState.Error(result.message)
                 }

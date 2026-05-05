@@ -14,9 +14,14 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.core.content.FileProvider
+import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
+import com.example.krug.R
+import com.example.krug.ui.theme.KrugTheme
 import com.example.krug.utils.ImageUtils
 import java.io.File
 import java.io.FileOutputStream
@@ -55,9 +60,9 @@ fun AvatarPicker(
                     modifier = Modifier.fillMaxSize()
                 )
             } else {
-                Icon(
-                    imageVector = Icons.Default.Person,
-                    contentDescription = "Placeholder",
+                Image(
+                    painter = painterResource(id = R.drawable.ic_default_avatar),
+                    contentDescription = "Default avatar",
                     modifier = Modifier.fillMaxSize()
                 )
             }
@@ -85,4 +90,27 @@ private fun bitmapToUri(context: android.content.Context, bitmap: Bitmap): Uri {
         "${context.packageName}.fileprovider",
         tempFile
     )
+}
+
+@Preview(showBackground = true, name = "AvatarPicker – пусто")
+@Composable
+fun AvatarPickerPreviewEmpty() {
+    KrugTheme {
+        AvatarPicker(
+            currentAvatarUri = null,
+            onAvatarUriChanged = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "AvatarPicker – с изображением")
+@Composable
+fun AvatarPickerPreviewWithImage() {
+    val fakeUri = "android.resource://com.example.krug/drawable/ic_launcher_foreground".toUri()
+    KrugTheme {
+        AvatarPicker(
+            currentAvatarUri = fakeUri,
+            onAvatarUriChanged = {}
+        )
+    }
 }

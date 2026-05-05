@@ -1,27 +1,22 @@
 package com.example.krug.ui.screens.main
 
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Person
-import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
@@ -38,11 +33,11 @@ fun MainAppScreen(
     userData: UserData?,
     isLoading: Boolean,
     error: String?,
-    onRefresh: () -> Unit
+    onRefresh: () -> Unit,
+    onCreateEventClick: () -> Unit
 ) {
-    val avatarUrl = remember(userId) {
-        if (userId != null) AvatarUrlProvider.build(userId) else null
-    }
+    val avatarUrl =
+        remember(userId) { if (userId != null) AvatarUrlProvider.build(userId) else null }
 
     Scaffold(
         topBar = {
@@ -69,9 +64,14 @@ fun MainAppScreen(
                     }
                 }
             )
+        },
+        floatingActionButton = {
+            FloatingActionButton(onClick = onCreateEventClick) {
+                Icon(Icons.Default.Add, contentDescription = "Создать событие")
+            }
         }
     ) { paddingValues ->
-        // основное содержимое экрана (список событий и т.д.)
+        // основное содержимое экрана (список событий и т.д.), потом сюда уже будет выводиться все
         Box(modifier = Modifier.padding(paddingValues)) {
             when {
                 isLoading -> CircularProgressIndicator()

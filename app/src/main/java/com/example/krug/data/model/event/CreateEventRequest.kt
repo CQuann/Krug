@@ -6,5 +6,5 @@ data class CreateEventRequest(
     val description: String? = null,
     val startDateTime: String? = null,
     val endDateTime: String? = null,
-    val color: String? = null
+    val color: String
 )

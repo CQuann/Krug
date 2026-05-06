@@ -87,15 +87,14 @@ class RetrofitEventRepository @Inject constructor(
 
     override suspend fun uploadEventAvatar(eventId: String, uri: Uri): DataResult<Unit> {
         return try {
-            sessionManager.getToken() ?: return DataResult.Error("Не авторизован")
-            val file = ImageUtils.uriToFile(context, uri)
-                ?: return DataResult.Error("Не удалось получить файл")
-            val compressedFile = ImageUtils.compressImage(file, 1024)
+            val croppedFile = ImageUtils.cropToSquareFile(context, uri)
+                ?: return DataResult.Error("Не удалось обработать фото")
+            val compressedFile = ImageUtils.compressImage(croppedFile, 5*1024)
             val requestBody = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("avatar", compressedFile.name, requestBody)
             val response = eventApi.uploadEventAvatar(eventId, part)
             if (response.isSuccessful) DataResult.Success(Unit)
-            else DataResult.Error("Ошибка загрузки аватарки: ${response.code()}")
+            else DataResult.Error("Ошибка загрузки: ${response.code()}")
         } catch (e: Exception) {
             DataResult.Error("Ошибка: ${e.message}")
         }

@@ -129,13 +129,18 @@ class RetrofitAuthRepository @Inject constructor(
 
     override suspend fun uploadAvatar(uri: Uri): DataResult<String> {
         return try {
-            sessionManager.getToken() ?: return DataResult.Error("Не авторизован")
-            val file = ImageUtils.uriToFile(context, uri)
-                ?: return DataResult.Error("Не удалось получить файл")
-            val compressedFile = ImageUtils.compressImage(file, 1024)
+            // 1. Обрезаем до квадрата
+            val croppedFile = ImageUtils.cropToSquareFile(context, uri)
+                ?: return DataResult.Error("Не удалось обработать фото")
+
+            // 2. Сжимаем до 5 МБ
+            val compressedFile = ImageUtils.compressImage(croppedFile, 5*1024)
+
+            // 3. Отправляем
             val requestBody = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("avatar", compressedFile.name, requestBody)
             val response = authApi.uploadAvatar(part)
+
             if (response.success) DataResult.Success("")
             else DataResult.Error(response.error ?: "Ошибка загрузки")
         } catch (e: Exception) {

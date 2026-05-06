@@ -1,11 +1,14 @@
 package com.example.krug.di
 
+import android.content.Context
+import coil.ImageLoader
 import com.example.krug.data.network.AuthApi
 import com.example.krug.data.network.EventApi
 import com.example.krug.utils.Constants.BASE_URL
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
+import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor

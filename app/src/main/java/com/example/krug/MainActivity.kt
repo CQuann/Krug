@@ -25,7 +25,6 @@ class MainActivity : ComponentActivity() {
 //            val result = repo.requestCode("p9083718@gmail.com")
 //            println("TEST RESULT: $result")
 //        }
-
         setContent {
             KrugTheme {
                 Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {

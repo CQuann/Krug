@@ -1,18 +1,19 @@
 package com.example.krug.ui.components
 
+import android.Manifest
 import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Person
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
@@ -22,7 +23,6 @@ import androidx.core.net.toUri
 import coil.compose.rememberAsyncImagePainter
 import com.example.krug.R
 import com.example.krug.ui.theme.KrugTheme
-import com.example.krug.utils.ImageUtils
 import java.io.File
 import java.io.FileOutputStream
 
@@ -38,10 +38,20 @@ fun AvatarPicker(
         uri?.let { onAvatarUriChanged(it) }
     }
 
+    // Камера — сам лаунчер
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
         if (bitmap != null) {
             val uri = bitmapToUri(context, bitmap)
             onAvatarUriChanged(uri)
+        }
+    }
+
+    // Запрос разрешения CAMERA
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            cameraLauncher.launch(null)
         }
     }
 
@@ -56,8 +66,9 @@ fun AvatarPicker(
             if (currentAvatarUri != null) {
                 Image(
                     painter = rememberAsyncImagePainter(currentAvatarUri),
-                    contentDescription = "Avatar preview",
-                    modifier = Modifier.fillMaxSize()
+                    contentDescription = "Preview",
+                    contentScale = ContentScale.Crop,
+                    modifier = Modifier.fillMaxSize().clip(CircleShape)
                 )
             } else {
                 Image(
@@ -73,7 +84,10 @@ fun AvatarPicker(
             Button(onClick = { galleryLauncher.launch("image/*") }) {
                 Text("Галерея")
             }
-            Button(onClick = { cameraLauncher.launch(null) }) {
+            Button(onClick = {
+                // Запрашиваем разрешение камеры
+                cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+            }) {
                 Text("Камера")
             }
         }

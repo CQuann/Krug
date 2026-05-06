@@ -63,4 +63,43 @@ object ImageUtils {
         bitmap.recycle()
         return compressedFile
     }
+
+
+    /**
+     * Загружает Bitmap из Uri и обрезает до центрального квадрата.
+     */
+    fun cropToSquareBitmap(context: Context, uri: Uri): Bitmap? {
+        return try {
+            val inputStream = context.contentResolver.openInputStream(uri) ?: return null
+            val original = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+
+            val width = original.width
+            val height = original.height
+            val minSide = minOf(width, height)
+
+            val x = (width - minSide) / 2
+            val y = (height - minSide) / 2
+
+            val cropped = Bitmap.createBitmap(original, x, y, minSide, minSide)
+            if (cropped != original) original.recycle()
+            cropped
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+     * Из Uri делает квадратный файл (JPEG, качество 100%).
+     */
+    fun cropToSquareFile(context: Context, uri: Uri): File? {
+        val bitmap = cropToSquareBitmap(context, uri) ?: return null
+        val outFile = File(context.cacheDir, "cropped_avatar_${System.currentTimeMillis()}.jpg")
+        FileOutputStream(outFile).use { out ->
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, out)
+        }
+        bitmap.recycle()
+        return outFile
+    }
 }

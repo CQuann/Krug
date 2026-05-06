@@ -8,6 +8,6 @@ import javax.inject.Singleton
 class AvatarUrlProvider @Inject constructor() {
 
     companion object {
-        fun build(userId: String): String = "$BASE_URL/avatars/$userId.jpg"
+        fun build(userId: String): String = "$BASE_URL/avatars/$userId"
     }
 }

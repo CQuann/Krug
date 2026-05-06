@@ -18,5 +18,7 @@ sealed class Screen(val route: String) {
     object EventAvatarUpload : Screen("event_avatar_upload/{eventId}") {
         fun passArgs(eventId: String) = "event_avatar_upload/$eventId"
     }
+
+    object EditProfile : Screen("edit_profile")
 }
 

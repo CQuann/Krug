@@ -10,13 +10,24 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.krug.ui.screens.auth.*
+import com.example.krug.ui.screens.auth.AvatarUploadScreen
+import com.example.krug.ui.screens.auth.AvatarUploadViewModel
+import com.example.krug.ui.screens.main.MainAppScreen
+import com.example.krug.ui.screens.auth.LoginEmailScreen
+import com.example.krug.ui.screens.auth.LoginEmailViewModel
+import com.example.krug.ui.screens.auth.RegisterNavigation
+import com.example.krug.ui.screens.auth.RegisterProfileScreen
+import com.example.krug.ui.screens.auth.RegisterProfileViewModel
+import com.example.krug.ui.screens.auth.VerifyCodeScreen
+import com.example.krug.ui.screens.auth.VerifyCodeViewModel
+import com.example.krug.ui.screens.auth.VerifyNavigation
 import com.example.krug.ui.screens.event.CreateEventNavigation
 import com.example.krug.ui.screens.event.CreateEventScreen
 import com.example.krug.ui.screens.event.CreateEventViewModel
 import com.example.krug.ui.screens.event.EventAvatarUploadScreen
 import com.example.krug.ui.screens.event.EventAvatarUploadViewModel
-import com.example.krug.ui.screens.main.MainAppScreen
+import com.example.krug.ui.screens.main.EditProfile
+import com.example.krug.ui.screens.main.EditProfileViewModel
 import com.example.krug.ui.screens.main.MainAppViewModel
 import com.example.krug.ui.screens.splash.SplashNavigation
 import com.example.krug.ui.screens.splash.SplashScreen
@@ -40,7 +51,6 @@ fun SetupNavGraph() {
                                 popUpTo(Screen.Splash.route) { inclusive = true }
                             }
                         }
-
                         SplashNavigation.GoToLogin -> {
                             navController.navigate(Screen.LoginEmail.route) {
                                 popUpTo(Screen.Splash.route) { inclusive = true }
@@ -255,7 +265,23 @@ fun SetupNavGraph() {
                 isLoading = isLoading,
                 error = error,
                 onRefresh = { viewModel.loadUserData() },
-                onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) }
+                onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) },
+                onEditProfileClick = { navController.navigate(Screen.EditProfile.route) }
+            )
+        }
+
+        composable(Screen.EditProfile.route) {
+            val viewModel: EditProfileViewModel = hiltViewModel()
+            val userData by viewModel.userData.collectAsStateWithLifecycle()
+
+            LaunchedEffect(Unit) {
+                viewModel.loadUser()
+            }
+
+            EditProfile(
+                userData = userData,
+                onBackClick = { navController.popBackStack() },
+                viewModel = viewModel
             )
         }
     }

@@ -1,4 +1,4 @@
-package com.example.krug.ui.screens.event
+package com.example.krug.ui.screens.event.createEvent
 
 import java.time.LocalDate
 import java.time.LocalTime

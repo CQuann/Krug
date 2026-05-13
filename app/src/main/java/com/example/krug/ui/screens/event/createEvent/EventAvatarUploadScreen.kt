@@ -1,4 +1,4 @@
-package com.example.krug.ui.screens.event
+package com.example.krug.ui.screens.event.createEvent
 
 import android.net.Uri
 import androidx.compose.foundation.layout.Arrangement

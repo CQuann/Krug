@@ -21,11 +21,15 @@ import com.example.krug.ui.screens.auth.RegisterProfileViewModel
 import com.example.krug.ui.screens.auth.VerifyCodeScreen
 import com.example.krug.ui.screens.auth.VerifyCodeViewModel
 import com.example.krug.ui.screens.auth.VerifyNavigation
-import com.example.krug.ui.screens.event.CreateEventNavigation
-import com.example.krug.ui.screens.event.CreateEventScreen
-import com.example.krug.ui.screens.event.CreateEventViewModel
-import com.example.krug.ui.screens.event.EventAvatarUploadScreen
-import com.example.krug.ui.screens.event.EventAvatarUploadViewModel
+import com.example.krug.ui.screens.event.EventDetailScreen
+import com.example.krug.ui.screens.event.EventDetailViewModel
+import com.example.krug.ui.screens.event.EventScreen
+import com.example.krug.ui.screens.event.EventViewModel
+import com.example.krug.ui.screens.event.createEvent.CreateEventNavigation
+import com.example.krug.ui.screens.event.createEvent.CreateEventScreen
+import com.example.krug.ui.screens.event.createEvent.CreateEventViewModel
+import com.example.krug.ui.screens.event.createEvent.EventAvatarUploadScreen
+import com.example.krug.ui.screens.event.createEvent.EventAvatarUploadViewModel
 import com.example.krug.ui.screens.main.EditProfile
 import com.example.krug.ui.screens.main.EditProfileViewModel
 import com.example.krug.ui.screens.main.MainAppViewModel
@@ -256,17 +260,60 @@ fun SetupNavGraph() {
             val viewModel: MainAppViewModel = hiltViewModel()
             val userId by viewModel.userId.collectAsStateWithLifecycle()
             val userData by viewModel.userData.collectAsStateWithLifecycle()
-            val isLoading by viewModel.isLoading.collectAsStateWithLifecycle()
+            val events by viewModel.events.collectAsStateWithLifecycle()
+            val currentStatus by viewModel.currentStatus.collectAsStateWithLifecycle()
+            val totalEvents by viewModel.totalEvents.collectAsStateWithLifecycle()
+            val isLoadingMore by viewModel.isLoadingMore.collectAsStateWithLifecycle()
+            val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
             val error by viewModel.error.collectAsStateWithLifecycle()
 
             MainAppScreen(
                 userId = userId,
                 userData = userData,
-                isLoading = isLoading,
+                events = events,
+                currentStatus = currentStatus,
+                totalEvents = totalEvents,
+                isLoadingMore = isLoadingMore,
+                isRefreshing = isRefreshing,
                 error = error,
-                onRefresh = { viewModel.loadUserData() },
-                onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) },
-                onEditProfileClick = { navController.navigate(Screen.EditProfile.route) }
+                onEditProfileClick = {navController.navigate(Screen.EditProfile.route)},
+                onStatusChange = { viewModel.onStatusChange(it) },
+                onEventClick = { eventId -> navController.navigate(Screen.EventScreen.passArgs(eventId)) },
+                onLoadMore = { viewModel.loadMoreEvents() },
+                onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) }
+            )
+        }
+
+        composable(
+            route = Screen.EventScreen.route,
+            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+        ) { _ ->
+            val viewModel: EventViewModel = hiltViewModel()
+            val event by viewModel.event.collectAsStateWithLifecycle()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+            EventScreen(
+                event = event,
+                uiState = uiState,
+                onHeaderClick = {
+                    event?.let { navController.navigate(Screen.EventDetail.passArgs(it.id)) }
+                },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
+        composable(
+            route = Screen.EventDetail.route,
+            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+        ) {
+            val viewModel: EventDetailViewModel = hiltViewModel()
+            val event by viewModel.event.collectAsStateWithLifecycle()
+            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+
+            EventDetailScreen(
+                event = event,
+                uiState = uiState,
+                onBackClick = { navController.popBackStack() }
             )
         }
 

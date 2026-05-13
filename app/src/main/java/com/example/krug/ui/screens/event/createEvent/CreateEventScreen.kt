@@ -1,4 +1,4 @@
-package com.example.krug.ui.screens.event
+package com.example.krug.ui.screens.event.createEvent
 
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Spacer

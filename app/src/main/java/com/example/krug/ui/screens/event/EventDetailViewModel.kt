@@ -1,0 +1,52 @@
+package com.example.krug.ui.screens.event
+
+import androidx.lifecycle.SavedStateHandle
+import androidx.lifecycle.ViewModel
+import androidx.lifecycle.viewModelScope
+import com.example.krug.data.model.DataResult
+import com.example.krug.data.model.event.Event
+import com.example.krug.data.repository.EventRepository
+import dagger.hilt.android.lifecycle.HiltViewModel
+import jakarta.inject.Inject
+import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.launch
+
+@HiltViewModel
+class EventDetailViewModel @Inject constructor(
+    private val eventRepository: EventRepository,
+    private val savedStateHandle: SavedStateHandle
+) : ViewModel() {
+
+    private val eventId: String = savedStateHandle.get<String>("eventId") ?: ""
+
+    private val _event = MutableStateFlow<Event?>(null)
+    val event: StateFlow<Event?> = _event.asStateFlow()
+
+    private val _uiState = MutableStateFlow<EventDetailUiState>(EventDetailUiState.Loading)
+    val uiState: StateFlow<EventDetailUiState> = _uiState.asStateFlow()
+
+    init { loadEvent() }
+
+    fun loadEvent() {
+        viewModelScope.launch {
+            _uiState.value = EventDetailUiState.Loading
+            when (val result = eventRepository.getEvent(eventId)) {
+                is DataResult.Success -> {
+                    _event.value = result.data
+                    _uiState.value = EventDetailUiState.Success
+                }
+                is DataResult.Error -> {
+                    _uiState.value = EventDetailUiState.Error(result.message)
+                }
+            }
+        }
+    }
+}
+
+sealed class EventDetailUiState {
+    object Loading : EventDetailUiState()
+    object Success : EventDetailUiState()
+    data class Error(val message: String) : EventDetailUiState()
+}

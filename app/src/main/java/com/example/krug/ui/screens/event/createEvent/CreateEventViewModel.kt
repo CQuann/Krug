@@ -1,4 +1,4 @@
-package com.example.krug.ui.screens.event
+package com.example.krug.ui.screens.event.createEvent
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,6 +13,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asSharedFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import java.time.LocalDate
+import java.time.LocalTime
 import javax.inject.Inject
 
 @HiltViewModel
@@ -45,19 +47,19 @@ class CreateEventViewModel @Inject constructor(
         _formData.value = _formData.value.copy(location = loc)
     }
 
-    fun updateStartDate(date: java.time.LocalDate?) {
+    fun updateStartDate(date: LocalDate?) {
         _formData.value = _formData.value.copy(startDate = date)
     }
 
-    fun updateStartTime(time: java.time.LocalTime?) {
+    fun updateStartTime(time: LocalTime?) {
         _formData.value = _formData.value.copy(startTime = time)
     }
 
-    fun updateEndDate(date: java.time.LocalDate?) {
+    fun updateEndDate(date: LocalDate?) {
         _formData.value = _formData.value.copy(endDate = date)
     }
 
-    fun updateEndTime(time: java.time.LocalTime?) {
+    fun updateEndTime(time: LocalTime?) {
         _formData.value = _formData.value.copy(endTime = time)
     }
 

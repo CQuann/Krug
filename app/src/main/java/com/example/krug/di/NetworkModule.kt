@@ -4,6 +4,7 @@ import android.content.Context
 import coil.ImageLoader
 import com.example.krug.data.network.AuthApi
 import com.example.krug.data.network.EventApi
+import com.example.krug.data.network.PlanningApi
 import com.example.krug.utils.Constants.BASE_URL
 import dagger.Module
 import dagger.Provides
@@ -52,4 +53,9 @@ object NetworkModule {
     fun provideEventApi(retrofit: Retrofit): EventApi {
         return retrofit.create(EventApi::class.java)
     }
+
+    @Provides
+    @Singleton
+    fun providePlanningApi(retrofit: Retrofit): PlanningApi =
+        retrofit.create(PlanningApi::class.java)
 }

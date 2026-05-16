@@ -35,9 +35,13 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.krug.R
 import com.example.krug.data.model.event.Event
+import com.example.krug.ui.screens.event.planning.EventPlanningScreen
+import com.example.krug.ui.screens.event.planning.EventPlanningViewModel
 import com.example.krug.ui.theme.KrugTheme
 import com.example.krug.utils.Constants
 
@@ -108,8 +112,26 @@ fun EventScreen(
                         0 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text("Чат пока недоступен")
                         }
-                        1 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Планирование")  // позже здесь будет функционал
+                        1 -> {
+                            val planningViewModel: EventPlanningViewModel = hiltViewModel()
+                            val planningState by planningViewModel.uiState.collectAsStateWithLifecycle()
+                            val pollQuestion by planningViewModel.pollQuestion.collectAsStateWithLifecycle()
+                            val pollOptions by planningViewModel.pollOptions.collectAsStateWithLifecycle()
+                            val multipleChoice by planningViewModel.multipleChoice.collectAsStateWithLifecycle()
+                            val questionError by planningViewModel.questionError.collectAsStateWithLifecycle()
+                            val optionErrors by planningViewModel.optionErrors.collectAsStateWithLifecycle()
+                            val requestState by planningViewModel.requestState.collectAsStateWithLifecycle()
+
+                            EventPlanningScreen(
+                                viewModel = planningViewModel,
+                                uiState = planningState,
+                                pollQuestion = pollQuestion,
+                                pollOptions = pollOptions,
+                                multipleChoice = multipleChoice,
+                                questionError = questionError,
+                                optionErrors = optionErrors,
+                                requestState = requestState
+                            )
                         }
                         2 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
                             Text("Альбом пока недоступен")

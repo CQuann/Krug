@@ -2,9 +2,11 @@ package com.example.krug.data.repository
 
 import android.content.Context
 import android.net.Uri
+import android.util.Log
 import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.UserData
+import com.example.krug.data.model.UserDataRequest
 import com.example.krug.data.model.UserEditRequest
 import com.example.krug.data.model.auth.CheckUsernameRequest
 import com.example.krug.data.model.auth.EmailRequest
@@ -68,8 +70,12 @@ class RetrofitAuthRepository @Inject constructor(
 
     override suspend fun register(userData: UserData): DataResult<Pair<String, String>> {
         return try {
-            val request = RegisterRequest(userData)
+            val request = RegisterRequest(UserDataRequest(
+                userData.email, userData.display_name, userData.birthday, userData.username
+            ))
             val response = authApi.register(request)
+            Log.d("RetrofitAuthRepository", response.toString())
+
             if (response.token != null && response.userId != null) {
                 DataResult.Success(Pair(response.token, response.userId))
             } else {
@@ -83,6 +89,7 @@ class RetrofitAuthRepository @Inject constructor(
     override suspend fun checkUsername(username: String): DataResult<Boolean> {
         return try {
             val response = authApi.checkUsername(CheckUsernameRequest(username))
+            Log.d("RetrofitAuthRepository", response.available.toString())
             DataResult.Success(response.available)
         } catch (e: Exception) {
             DataResult.Error("Ошибка сети: ${e.message}")
@@ -111,6 +118,7 @@ class RetrofitAuthRepository @Inject constructor(
     override suspend fun getUserData(): DataResult<UserData> {
         return try {
             val response = authApi.getUserData()
+            Log.d("getUserData", response.toString())
             DataResult.Success(response.user)
         } catch (e: Exception) {
             DataResult.Error("Ошибка получения данных: ${e.message}")
@@ -119,7 +127,15 @@ class RetrofitAuthRepository @Inject constructor(
 
     override suspend fun editUserData(userData: UserData): DataResult<Unit> {
         return try {
-            val response = authApi.editUserData(UserEditRequest(userData))
+            Log.d("editUserData", userData.toString())
+            val response = authApi.editUserData(UserEditRequest(
+                avatar_url = "",
+                birthday = userData.birthday,
+                description = "",
+                display_name = userData.display_name,
+                email = userData.email,
+                username = userData.username
+            ))
             if (response.success) DataResult.Success(Unit)
             else DataResult.Error(response.error ?: "Ошибка редактирования")
         } catch (e: Exception) {
@@ -127,7 +143,7 @@ class RetrofitAuthRepository @Inject constructor(
         }
     }
 
-    override suspend fun uploadAvatar(uri: Uri): DataResult<String> {
+    override suspend fun uploadAvatar(uri: Uri, token: String?): DataResult<String> {
         return try {
             // 1. Обрезаем до квадрата
             val croppedFile = ImageUtils.cropToSquareFile(context, uri)
@@ -139,7 +155,8 @@ class RetrofitAuthRepository @Inject constructor(
             // 3. Отправляем
             val requestBody = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("avatar", compressedFile.name, requestBody)
-            val response = authApi.uploadAvatar(part)
+            val response = authApi.uploadAvatar("Bearer $token", part)
+            Log.d("Avatar upload", response.toString())
 
             if (response.success) DataResult.Success("")
             else DataResult.Error(response.error ?: "Ошибка загрузки")

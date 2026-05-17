@@ -25,6 +25,8 @@ datastoreCore = "1.2.1"
 foundationLayout = "1.10.6"
 foundation = "1.10.6"
 runtime = "1.10.6"
+foundationVersion = "1.11.1"
+uiText = "1.11.1"
 
 
 
@@ -61,6 +63,8 @@ androidx-datastore-core = { group = "androidx.datastore", name = "datastore-core
 androidx-compose-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayout" }
 androidx-compose-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundation" }
 androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtime" }
+androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundationVersion" }
+androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

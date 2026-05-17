@@ -23,6 +23,7 @@ class SplashViewModel @Inject constructor(
 
     fun checkAuth() {
         viewModelScope.launch {
+            _navigationEvent.emit(SplashNavigation.GoToMain) //убрать
             val token = sessionManager.getToken()
             Log.d("Splash", "Token: $token")
             if (token == null) {

@@ -52,7 +52,11 @@ fun MainAppScreen(
             TopAppBar(
                 title = { Text("Krug") },
                 actions = {
-                    Box(modifier = Modifier.size(40.dp)) {
+                    Box(modifier = Modifier
+                        .size(40.dp)
+                        .clickable {
+                            onEditProfileClick()
+                        }) {
                         if (avatarUrl != null) {
                             AsyncImage(
                                 model = avatarUrl,
@@ -68,9 +72,6 @@ fun MainAppScreen(
                                 contentDescription = "Avatar",
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .clickable {
-                                        onEditProfileClick()
-                                    }
 
                             )
                         }

@@ -3,6 +3,7 @@ package com.example.krug.ui.screens.auth
 import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +17,8 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AvatarUploadViewModel @Inject constructor(
-    private val authRepository: AuthRepository
+    private val authRepository: AuthRepository,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
     private val _avatarUri = MutableStateFlow<Uri?>(null)
@@ -37,7 +39,7 @@ class AvatarUploadViewModel @Inject constructor(
         val uri = _avatarUri.value ?: return
         viewModelScope.launch {
             _uiState.value = AvatarUploadUiState.Loading
-            when (val result = authRepository.uploadAvatar(uri)) {
+            when (val result = authRepository.uploadAvatar(uri, sessionManager.getToken())) {
                 is DataResult.Success -> {
                     _uiState.value = AvatarUploadUiState.Success
                     _navigationEvent.emit(Unit)

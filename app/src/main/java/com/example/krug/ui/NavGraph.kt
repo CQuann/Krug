@@ -10,6 +10,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.krug.data.model.UserData
 import com.example.krug.ui.screens.auth.AvatarUploadScreen
 import com.example.krug.ui.screens.auth.AvatarUploadViewModel
 import com.example.krug.ui.screens.main.MainAppScreen
@@ -26,9 +27,10 @@ import com.example.krug.ui.screens.event.CreateEventScreen
 import com.example.krug.ui.screens.event.CreateEventViewModel
 import com.example.krug.ui.screens.event.EventAvatarUploadScreen
 import com.example.krug.ui.screens.event.EventAvatarUploadViewModel
-import com.example.krug.ui.screens.main.EditProfile
-import com.example.krug.ui.screens.main.EditProfileViewModel
+
 import com.example.krug.ui.screens.main.MainAppViewModel
+import com.example.krug.ui.screens.profile.ProfileScreen
+import com.example.krug.ui.screens.profile.ProfileViewModel
 import com.example.krug.ui.screens.splash.SplashNavigation
 import com.example.krug.ui.screens.splash.SplashScreen
 import com.example.krug.ui.screens.splash.SplashViewModel
@@ -266,23 +268,23 @@ fun SetupNavGraph() {
                 error = error,
                 onRefresh = { viewModel.loadUserData() },
                 onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) },
-                onEditProfileClick = { navController.navigate(Screen.EditProfile.route) }
+                onEditProfileClick = { navController.navigate(Screen.Profile.route) }
             )
         }
 
-        composable(Screen.EditProfile.route) {
-            val viewModel: EditProfileViewModel = hiltViewModel()
-            val userData by viewModel.userData.collectAsStateWithLifecycle()
+        composable(Screen.Profile.route) {
+            val viewModel: ProfileViewModel = hiltViewModel()
 
             LaunchedEffect(Unit) {
                 viewModel.loadUser()
             }
 
-            EditProfile(
-                userData = userData,
+            ProfileScreen(
                 onBackClick = { navController.popBackStack() },
+                onLogoutClick = { navController.navigate(Screen.LoginEmail.route) },
                 viewModel = viewModel
             )
         }
     }
 }
+

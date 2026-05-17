@@ -1,5 +1,6 @@
 package com.example.krug.ui.screens.main
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.SessionManager
@@ -35,6 +36,7 @@ class MainAppViewModel @Inject constructor(
     init {
         viewModelScope.launch {
             _userId.value = sessionManager.getUserId()
+            Log.d("User id", _userId.value.toString())
             loadUserData()
         }
     }

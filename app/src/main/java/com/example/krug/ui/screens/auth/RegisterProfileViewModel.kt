@@ -1,5 +1,6 @@
 package com.example.krug.ui.screens.auth
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.SessionManager
@@ -84,6 +85,7 @@ class RegisterProfileViewModel @Inject constructor(
             delay(500)
             val result = authRepository.checkUsername(username)
             val available = (result as? DataResult.Success)?.data ?: false
+            Log.d("RegisterProfileViewModel", "available = $available")
             _usernameAvailable.value = available
             _isCheckingUsername.value = false
         }
@@ -102,10 +104,12 @@ class RegisterProfileViewModel @Inject constructor(
         } else if (_username.value.length < 3) {
             _usernameError.value = "Слишком короткий никнейм"
             hasError = true
-        } else if (_usernameAvailable.value != true) {
+        }
+        else if (_usernameAvailable.value != true) {
             _usernameError.value = "Никнейм недоступен"
             hasError = true
         }
+        if (hasError) Log.d("RegisterProfileViewModel", "hasError==true")
         if (hasError) return
 
         viewModelScope.launch {
@@ -114,6 +118,7 @@ class RegisterProfileViewModel @Inject constructor(
             val userData = UserData(email, _displayName.value, birthdayValue, _username.value)
             when (val result = authRepository.register(userData)) {
                 is DataResult.Success -> {
+                    Log.d("Register", "Success")
                     val (token, userId) = result.data
                     sessionManager.saveToken(token)
                     sessionManager.saveUserId(userId)
@@ -121,6 +126,7 @@ class RegisterProfileViewModel @Inject constructor(
                 }
 
                 is DataResult.Error -> {
+                    Log.d("Register", "Error")
                     _uiState.value = RegisterUiState.Error(result.message)
                 }
             }

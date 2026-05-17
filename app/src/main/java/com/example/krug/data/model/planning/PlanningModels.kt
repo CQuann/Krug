@@ -59,3 +59,15 @@ data class CreateTaskListRequest(
     val title: String,
     val items: List<String>
 )
+
+data class VoteRequest(
+    val option_indexes: List<Int>
+)
+
+data class AssignRequest(
+    val assign: Boolean
+)
+
+data class CompleteRequest(
+    val completed: Boolean
+)

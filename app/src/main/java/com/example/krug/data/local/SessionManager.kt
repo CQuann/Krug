@@ -25,14 +25,18 @@ class SessionManager @Inject constructor(
         private val USER_ID_KEY = stringPreferencesKey("user_id")
     }
 
-    // Кэш токена для быстрого синхронного доступа (интерцептор)
     @Volatile
     var cachedToken: String? = null
+        private set
+
+    @Volatile
+    var cachedUserId: String? = null
         private set
 
     init {
         runBlocking {
             cachedToken = getToken()
+            cachedUserId = getUserId()
         }
     }
 
@@ -59,6 +63,7 @@ class SessionManager @Inject constructor(
     }
 
     suspend fun saveUserId(userId: String) {
+        cachedUserId = userId
         context.sessionDataStore.edit { prefs ->
             prefs[USER_ID_KEY] = userId
         }
@@ -73,6 +78,7 @@ class SessionManager @Inject constructor(
     }
 
     suspend fun clearUserId() {
+        cachedUserId = null
         context.sessionDataStore.edit { prefs ->
             prefs.remove(USER_ID_KEY)
         }
@@ -81,6 +87,7 @@ class SessionManager @Inject constructor(
     // Полная очистка сессии
     suspend fun clearAll() {
         cachedToken = null
+        cachedUserId = null
         context.sessionDataStore.edit { it.clear() }
     }
 }

@@ -50,4 +50,34 @@ class RetrofitPlanningRepository @Inject constructor(
             Error("Сетевая ошибка: ${e.message}")
         }
     }
+
+    override suspend fun votePoll(eventId: String, pollId: String, optionIndexes: List<Int>): DataResult<PlanningModule> {
+        return try {
+            val response = api.votePoll(eventId, pollId, VoteRequest(optionIndexes))
+            if (response.isSuccessful) Success(response.body()!!)
+            else Error("Ошибка голосования: ${response.code()}")
+        } catch (e: Exception) {
+            Error("Сетевая ошибка: ${e.message}")
+        }
+    }
+
+    override suspend fun assignItem(eventId: String, type: String, moduleId: String, itemId: String, assign: Boolean): DataResult<PlanningModule> {
+        return try {
+            val response = api.assignItem(eventId, type, moduleId, itemId, AssignRequest(assign))
+            if (response.isSuccessful) Success(response.body()!!)
+            else Error("Ошибка бронирования: ${response.code()}")
+        } catch (e: Exception) {
+            Error("Сетевая ошибка: ${e.message}")
+        }
+    }
+
+    override suspend fun completeTask(eventId: String, moduleId: String, itemId: String, completed: Boolean): DataResult<PlanningModule> {
+        return try {
+            val response = api.completeTask(eventId, moduleId, itemId, CompleteRequest(completed))
+            if (response.isSuccessful) Success(response.body()!!)
+            else Error("Ошибка выполнения: ${response.code()}")
+        } catch (e: Exception) {
+            Error("Сетевая ошибка: ${e.message}")
+        }
+    }
 }

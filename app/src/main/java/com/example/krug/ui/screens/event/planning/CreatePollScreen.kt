@@ -16,7 +16,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.Button
-import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -37,7 +36,7 @@ import com.example.krug.ui.theme.KrugTheme
 
 @Composable
 fun CreatePollScreen(
-    question: String,
+    title: String,
     options: List<String>,
     multipleChoice: Boolean,
     questionError: String?,
@@ -62,7 +61,7 @@ fun CreatePollScreen(
             Spacer(Modifier.height(16.dp))
 
             OutlinedTextField(
-                value = question,
+                value = title,
                 onValueChange = onQuestionChange,
                 label = { Text("Вопрос") },
                 isError = questionError != null,
@@ -153,7 +152,7 @@ fun CreatePollScreen(
 fun CreatePollEmptyPreview() {
     KrugTheme {
         CreatePollScreen(
-            question = "",
+            title = "",
             options = listOf("", ""),
             multipleChoice = false,
             questionError = null,
@@ -175,7 +174,7 @@ fun CreatePollEmptyPreview() {
 fun CreatePollErrorPreview() {
     KrugTheme {
         CreatePollScreen(
-            question = "",
+            title = "",
             options = listOf("Да", ""),
             multipleChoice = true,
             questionError = "Введите вопрос",
@@ -197,7 +196,7 @@ fun CreatePollErrorPreview() {
 fun CreatePollLoadingPreview() {
     KrugTheme {
         CreatePollScreen(
-            question = "Куда пойдём?",
+            title = "Куда пойдём?",
             options = listOf("Парк", "Кафе", "Кино"),
             multipleChoice = false,
             questionError = null,
@@ -219,7 +218,7 @@ fun CreatePollLoadingPreview() {
 fun CreatePollNetworkErrorPreview() {
     KrugTheme {
         CreatePollScreen(
-            question = "Тест",
+            title = "Тест",
             options = listOf("A", "B"),
             multipleChoice = false,
             questionError = null,

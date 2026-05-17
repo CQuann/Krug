@@ -15,7 +15,7 @@ kotlin {
 
 android {
     namespace = "com.example.krug"
-    compileSdk = 36   // исправлено
+    compileSdk = 36
 
     defaultConfig {
         applicationId = "com.example.krug"

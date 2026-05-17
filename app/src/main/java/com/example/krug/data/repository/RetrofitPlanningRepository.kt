@@ -1,22 +1,53 @@
 package com.example.krug.data.repository
 
 import com.example.krug.data.model.DataResult
-import com.example.krug.data.model.planning.CreatePollRequest
+import com.example.krug.data.model.DataResult.*
 import com.example.krug.data.network.PlanningApi
-import jakarta.inject.Inject
-import jakarta.inject.Singleton
+import com.example.krug.data.model.planning.*
+import javax.inject.Inject
+import javax.inject.Singleton
 
 @Singleton
 class RetrofitPlanningRepository @Inject constructor(
     private val api: PlanningApi
 ) : PlanningRepository {
-    override suspend fun createPoll(request: CreatePollRequest): DataResult<Unit> {
+
+    override suspend fun getPlanningModules(eventId: String): DataResult<PlanningModulesResponse> {
         return try {
-            val response = api.createPoll(request)
-            if (response.isSuccessful) DataResult.Success(Unit)
-            else DataResult.Error("Ошибка создания опроса: ${response.code()}")
+            val response = api.getPlanningModules(eventId)
+            Success(response)
         } catch (e: Exception) {
-            DataResult.Error("Сетевая ошибка: ${e.message}")
+            Error("Ошибка загрузки модулей: ${e.message}")
+        }
+    }
+
+    override suspend fun createPoll(eventId: String, request: CreatePollRequest): DataResult<Unit> {
+        return try {
+            val response = api.createPoll(eventId, request)
+            if (response.isSuccessful) Success(Unit)
+            else Error("Ошибка создания опроса: ${response.code()}")
+        } catch (e: Exception) {
+            Error("Сетевая ошибка: ${e.message}")
+        }
+    }
+
+    override suspend fun createItemList(eventId: String, request: CreateItemListRequest): DataResult<Unit> {
+        return try {
+            val response = api.createItemList(eventId, request)
+            if (response.isSuccessful) Success(Unit)
+            else Error("Ошибка создания списка вещей: ${response.code()}")
+        } catch (e: Exception) {
+            Error("Сетевая ошибка: ${e.message}")
+        }
+    }
+
+    override suspend fun createTaskList(eventId: String, request: CreateTaskListRequest): DataResult<Unit> {
+        return try {
+            val response = api.createTaskList(eventId, request)
+            if (response.isSuccessful) Success(Unit)
+            else Error("Ошибка создания списка задач: ${response.code()}")
+        } catch (e: Exception) {
+            Error("Сетевая ошибка: ${e.message}")
         }
     }
 }

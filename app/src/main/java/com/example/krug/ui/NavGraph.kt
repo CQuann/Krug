@@ -21,8 +21,8 @@ import com.example.krug.ui.screens.auth.RegisterProfileViewModel
 import com.example.krug.ui.screens.auth.VerifyCodeScreen
 import com.example.krug.ui.screens.auth.VerifyCodeViewModel
 import com.example.krug.ui.screens.auth.VerifyNavigation
-import com.example.krug.ui.screens.event.EventDetailScreen
-import com.example.krug.ui.screens.event.EventDetailViewModel
+import com.example.krug.ui.screens.event.eventDetail.EventDetailScreen
+import com.example.krug.ui.screens.event.eventDetail.EventDetailViewModel
 import com.example.krug.ui.screens.event.EventScreen
 import com.example.krug.ui.screens.event.EventViewModel
 import com.example.krug.ui.screens.event.createEvent.CreateEventNavigation

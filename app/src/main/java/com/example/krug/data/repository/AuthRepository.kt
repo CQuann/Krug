@@ -14,5 +14,5 @@ interface AuthRepository {
     suspend fun logout(token: String): DataResult<Unit>
     suspend fun getUserData(): DataResult<UserData>
     suspend fun editUserData(userData: UserData): DataResult<Unit>
-    suspend fun uploadAvatar(uri: Uri): DataResult<String>
+    suspend fun uploadAvatar(uri: Uri, token: String?): DataResult<String>
 }

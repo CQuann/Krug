@@ -82,23 +82,28 @@ fun MainAppScreen(
             TopAppBar(
                 title = { Text("Krug") },
                 actions = {
-                    Box(modifier = Modifier.size(40.dp)) {
+                    Box(modifier = Modifier
+                        .size(40.dp)
+                        .clickable {
+                            onEditProfileClick()
+                        }) {
                         if (avatarUrl != null) {
                             AsyncImage(
                                 model = avatarUrl,
                                 contentDescription = "Avatar",
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .clip(CircleShape)
-                                    .clickable{onEditProfileClick()},
+                                    .clip(CircleShape),
                                 error = painterResource(R.drawable.ic_default_avatar)
                             )
                         } else {
-                            Icon(Icons.Default.Person,
-                                contentDescription = null,
+                            Icon(
+                                Icons.Default.Person,
+                                contentDescription = "Avatar",
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .clickable{onEditProfileClick()})
+
+                            )
                         }
                     }
                 }

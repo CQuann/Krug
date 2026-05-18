@@ -1,12 +1,8 @@
 package com.example.krug.ui
 
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
@@ -17,7 +13,6 @@ import androidx.navigation.navArgument
 import com.example.krug.data.model.RequestState
 import com.example.krug.ui.screens.auth.AvatarUploadScreen
 import com.example.krug.ui.screens.auth.AvatarUploadViewModel
-import com.example.krug.ui.screens.main.MainAppScreen
 import com.example.krug.ui.screens.auth.LoginEmailScreen
 import com.example.krug.ui.screens.auth.LoginEmailViewModel
 import com.example.krug.ui.screens.auth.RegisterNavigation
@@ -26,8 +21,6 @@ import com.example.krug.ui.screens.auth.RegisterProfileViewModel
 import com.example.krug.ui.screens.auth.VerifyCodeScreen
 import com.example.krug.ui.screens.auth.VerifyCodeViewModel
 import com.example.krug.ui.screens.auth.VerifyNavigation
-import com.example.krug.ui.screens.event.eventDetail.EventDetailScreen
-import com.example.krug.ui.screens.event.eventDetail.EventDetailViewModel
 import com.example.krug.ui.screens.event.EventScreen
 import com.example.krug.ui.screens.event.EventViewModel
 import com.example.krug.ui.screens.event.createEvent.CreateEventNavigation
@@ -40,9 +33,12 @@ import com.example.krug.ui.screens.event.createEvent.EventFormData
 import com.example.krug.ui.screens.event.editEvent.EditEventNavigation
 import com.example.krug.ui.screens.event.editEvent.EditEventViewModel
 import com.example.krug.ui.screens.event.eventDetail.DetailNavigationEvent
-import com.example.krug.ui.screens.main.EditProfile
-import com.example.krug.ui.screens.main.EditProfileViewModel
+import com.example.krug.ui.screens.event.eventDetail.EventDetailScreen
+import com.example.krug.ui.screens.event.eventDetail.EventDetailViewModel
+import com.example.krug.ui.screens.main.MainAppScreen
 import com.example.krug.ui.screens.main.MainAppViewModel
+import com.example.krug.ui.screens.profile.ProfileScreen
+import com.example.krug.ui.screens.profile.ProfileViewModel
 import com.example.krug.ui.screens.splash.SplashNavigation
 import com.example.krug.ui.screens.splash.SplashScreen
 import com.example.krug.ui.screens.splash.SplashViewModel
@@ -286,15 +282,16 @@ fun SetupNavGraph() {
                 isLoadingMore = isLoadingMore,
                 isRefreshing = isRefreshing,
                 error = error,
-                onEditProfileClick = {navController.navigate(Screen.EditProfile.route)},
+                onEditProfileClick = { navController.navigate(Screen.Profile.route) },
                 onStatusChange = { viewModel.onStatusChange(it) },
                 onEventClick = { eventId -> navController.navigate(Screen.EventScreen.passArgs(eventId)) },
                 onLoadMore = { viewModel.loadMoreEvents() },
                 onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) },
-                onRefresh = {viewModel.onRefresh()}
+                onRefresh = { viewModel.onRefresh() }
             )
         }
 
+        // Event detail screen
         composable(
             route = Screen.EventDetail.route,
             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
@@ -351,6 +348,7 @@ fun SetupNavGraph() {
             )
         }
 
+        // Edit event screen
         composable(
             route = Screen.EditEvent.route,
             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
@@ -404,6 +402,23 @@ fun SetupNavGraph() {
                 onEndTimeChange = { viewModel.updateEndTime(it) },
                 onColorChange = { viewModel.updateColor(it) },
                 onSaveClick = { viewModel.updateEvent() }
+            )
+        }
+
+        // Profile screen (new)
+        composable(Screen.Profile.route) {
+            val viewModel: ProfileViewModel = hiltViewModel()
+
+            LaunchedEffect(Unit) {
+                viewModel.loadUser()
+            }
+
+            ProfileScreen(
+                onBackClick = { navController.popBackStack() },
+                onLogoutClick = { navController.navigate(Screen.LoginEmail.route) {
+                    popUpTo(Screen.Splash.route) { inclusive = true }
+                }},
+                viewModel = viewModel
             )
         }
     }

@@ -9,22 +9,22 @@ import okhttp3.MultipartBody
 import retrofit2.http.*
 
 interface AuthApi {
-    @POST("auth/request-code")
+    @POST("auth/request_code")
     suspend fun requestCode(@Body request: EmailRequest): RequestCodeResponse
 
-    @POST("auth/verify-code")
+    @POST("auth/verify_code")
     suspend fun verifyCode(@Body request: VerifyCodeRequest): VerifyCodeResponse
 
     @POST("auth/register")
     suspend fun register(@Body request: RegisterRequest): RegisterResponse
 
-    @POST("auth/token-validate")
+    @POST("auth/token_validate")
     suspend fun validateToken(): TokenValidateResponse
 
     @POST("auth/logout")
     suspend fun logout(@Body request: LogoutRequest): LogoutResponse
 
-    @POST("auth/check-username")
+    @POST("auth/check_username")
     suspend fun checkUsername(@Body request: CheckUsernameRequest): CheckUsernameResponse
 
     @GET("user/get-data")
@@ -35,5 +35,8 @@ interface AuthApi {
 
     @Multipart
     @POST("user/avatar")
-    suspend fun uploadAvatar(@Part avatar: MultipartBody.Part): AvatarUploadResponse
+    suspend fun uploadAvatar(
+        @Header("Authorization") token: String?,
+        @Part avatar: MultipartBody.Part
+    ): AvatarUploadResponse
 }

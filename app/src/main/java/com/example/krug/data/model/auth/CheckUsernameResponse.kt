@@ -1,3 +1,8 @@
 package com.example.krug.data.model.auth
 
-data class CheckUsernameResponse(val available: Boolean)
+import com.google.gson.annotations.SerializedName
+
+data class CheckUsernameResponse(
+    @SerializedName("success")
+    val available: Boolean
+)

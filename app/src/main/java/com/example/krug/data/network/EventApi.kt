@@ -1,6 +1,7 @@
 package com.example.krug.data.network
 
 import com.example.krug.data.model.event.*
+import com.example.krug.ui.Screen
 import okhttp3.MultipartBody
 import retrofit2.http.*
 
@@ -17,7 +18,7 @@ interface EventApi {
     ): EventsListResponse
 
     @GET("events/{id}")
-    suspend fun getEvent(@Path("id") id: String): Event
+    suspend fun getEvent(@Path("id") id: String): DetailedEvent
 
     @PUT("events/{id}")
     suspend fun updateEvent(
@@ -39,5 +40,18 @@ interface EventApi {
     suspend fun uploadEventAvatar(
         @Path("id") eventId: String,
         @Part avatar: MultipartBody.Part
+    ): retrofit2.Response<Unit>
+
+    @DELETE("events/{eventId}/members/{userId}")
+    suspend fun removeMember(
+        @Path("eventId") eventId: String,
+        @Path("userId") userId: String
+    ): retrofit2.Response<Unit>
+
+    @PATCH("events/{eventId}/members/{userId}")
+    suspend fun updateMemberPermissions(
+        @Path("eventId") eventId: String,
+        @Path("userId") userId: String,
+        @Body body: UpdateMemberPermissionsRequest
     ): retrofit2.Response<Unit>
 }

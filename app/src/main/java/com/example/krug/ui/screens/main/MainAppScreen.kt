@@ -19,10 +19,13 @@ import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Tab
 import androidx.compose.material3.TabRow
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
@@ -58,14 +61,23 @@ fun MainAppScreen(
     onEventClick: (String) -> Unit,
     onLoadMore: () -> Unit,
     onCreateEventClick: () -> Unit,
-    onEditProfileClick: () -> Unit
+    onEditProfileClick: () -> Unit,
+    onRefresh: () -> Unit
 ) {
+
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(error) {
+        if (error != null) snackbarHostState.showSnackbar(error)
+    }
+
     val avatarUrl = remember(userId) { if (userId != null) AvatarUrlProvider.build(userId) else null }
 
     val tabs = listOf("active" to "Активные", "archived" to "Архив")
     var selectedTabIndex by remember(currentStatus) { mutableIntStateOf(if (currentStatus == "active") 0 else 1) }
 
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = { Text("Krug") },
@@ -112,31 +124,29 @@ fun MainAppScreen(
                 }
             }
 
-            if (error != null && events.isEmpty()) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Ошибка: $error", color = MaterialTheme.colorScheme.error)
-                }
-            } else if (events.isEmpty() && !isRefreshing) {
-                Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Нет событий")
-                }
-            } else {
-                LazyColumn(modifier = Modifier.fillMaxSize()) {
-                    items(events.size) { index ->
-                        val event = events[index]
-                        EventCard(event = event, onClick = { onEventClick(event.id) })
+            PullToRefreshBox(isRefreshing = isRefreshing, onRefresh = onRefresh) {
+                if (events.isEmpty() && !isRefreshing) {
+                    Box(modifier = Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                        Text("Нет событий")
+                    }
+                } else {
+                    LazyColumn(modifier = Modifier.fillMaxSize()) {
+                        items(events.size) { index ->
+                            val event = events[index]
+                            EventCard(event = event, onClick = { onEventClick(event.id) })
 
-                        // Автоматическая подгрузка при достижении последнего элемента
-                        if (index == events.size - 1 && !isLoadingMore && events.size < totalEvents) {
-                            LaunchedEffect(event.id) {
-                                onLoadMore()
+                            // Автоматическая подгрузка при достижении последнего элемента
+                            if (index == events.size - 1 && !isLoadingMore && events.size < totalEvents) {
+                                LaunchedEffect(event.id) {
+                                    onLoadMore()
+                                }
                             }
                         }
-                    }
-                    if (isLoadingMore) {
-                        item {
-                            Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
-                                CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                        if (isLoadingMore) {
+                            item {
+                                Box(modifier = Modifier.fillMaxWidth().padding(16.dp), contentAlignment = Alignment.Center) {
+                                    CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                }
                             }
                         }
                     }
@@ -164,9 +174,7 @@ fun MainAppActivePreview() {
                     endDateTime = "2026-05-10T18:00Z",
                     color = "#3498DB",
                     status = "active",
-                    description = "",
-                    createdBy = "",
-                    createdAt = ""
+                    description = ""
                 ),
                 Event(
                     id = "2",
@@ -177,8 +185,6 @@ fun MainAppActivePreview() {
                     status = "active",
                     description = "",
                     endDateTime = "",
-                    createdBy = "",
-                    createdAt = ""
                 )
             ),
             currentStatus = "active",
@@ -190,7 +196,8 @@ fun MainAppActivePreview() {
             onEventClick = {},
             onLoadMore = {},
             onCreateEventClick = {},
-            onEditProfileClick = {}
+            onEditProfileClick = {},
+            onRefresh = {}
         )
     }
 }
@@ -212,7 +219,8 @@ fun MainAppArchiveEmptyPreview() {
             onEventClick = {},
             onLoadMore = {},
             onCreateEventClick = {},
-            onEditProfileClick = {}
+            onEditProfileClick = {},
+            onRefresh = {}
         )
     }
 }
@@ -234,7 +242,8 @@ fun MainAppLoadingPreview() {
             onEventClick = {},
             onLoadMore = {},
             onCreateEventClick = {},
-            onEditProfileClick = {}
+            onEditProfileClick = {},
+            onRefresh = {}
         )
     }
 }
@@ -256,7 +265,8 @@ fun MainAppErrorPreview() {
             onEventClick = {},
             onLoadMore = {},
             onCreateEventClick = {},
-            onEditProfileClick = {}
+            onEditProfileClick = {},
+            onRefresh = {}
         )
     }
 }

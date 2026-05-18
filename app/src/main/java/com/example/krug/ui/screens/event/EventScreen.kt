@@ -5,6 +5,9 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Chat
+import androidx.compose.material.icons.filled.Chat
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -88,8 +91,23 @@ fun EventScreen(
                     }
 
                     when (selectedTab) {
-                        0 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Чат пока недоступен")
+                        0 -> Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(
+                                Icons.Filled.Chat,
+                                contentDescription = null,
+                                modifier = Modifier.size(64.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                "Чат появится позже",
+                                style = MaterialTheme.typography.bodyLarge,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                         1 -> {
                             val planningViewModel: EventPlanningViewModel = hiltViewModel()
@@ -104,8 +122,14 @@ fun EventScreen(
                                 showTypeDialog = showTypeDialog
                             )
                         }
-                        2 -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            Text("Альбом пока недоступен")
+                        2 -> Column(
+                            modifier = Modifier.fillMaxSize(),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                            Spacer(Modifier.height(16.dp))
+                            Text("Альбом появится позже", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
                     }
                 }
@@ -127,9 +151,7 @@ fun EventScreenPreview() {
                 description = null,
                 location = "Парк",
                 startDateTime = "2026-05-10T15:00Z",
-                endDateTime = "2026-05-10T18:00Z",
-                createdBy = "",
-                createdAt = ""
+                endDateTime = "2026-05-10T18:00Z"
             ),
             uiState = EventUiState.Success,
             onHeaderClick = {},

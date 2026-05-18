@@ -1,8 +1,12 @@
 package com.example.krug.ui
 
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.hilt.navigation.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
@@ -10,6 +14,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import com.example.krug.data.model.RequestState
 import com.example.krug.ui.screens.auth.AvatarUploadScreen
 import com.example.krug.ui.screens.auth.AvatarUploadViewModel
 import com.example.krug.ui.screens.main.MainAppScreen
@@ -27,9 +32,14 @@ import com.example.krug.ui.screens.event.EventScreen
 import com.example.krug.ui.screens.event.EventViewModel
 import com.example.krug.ui.screens.event.createEvent.CreateEventNavigation
 import com.example.krug.ui.screens.event.createEvent.CreateEventScreen
+import com.example.krug.ui.screens.event.createEvent.CreateEventUiState
 import com.example.krug.ui.screens.event.createEvent.CreateEventViewModel
 import com.example.krug.ui.screens.event.createEvent.EventAvatarUploadScreen
 import com.example.krug.ui.screens.event.createEvent.EventAvatarUploadViewModel
+import com.example.krug.ui.screens.event.createEvent.EventFormData
+import com.example.krug.ui.screens.event.editEvent.EditEventNavigation
+import com.example.krug.ui.screens.event.editEvent.EditEventViewModel
+import com.example.krug.ui.screens.event.eventDetail.DetailNavigationEvent
 import com.example.krug.ui.screens.main.EditProfile
 import com.example.krug.ui.screens.main.EditProfileViewModel
 import com.example.krug.ui.screens.main.MainAppViewModel
@@ -280,55 +290,120 @@ fun SetupNavGraph() {
                 onStatusChange = { viewModel.onStatusChange(it) },
                 onEventClick = { eventId -> navController.navigate(Screen.EventScreen.passArgs(eventId)) },
                 onLoadMore = { viewModel.loadMoreEvents() },
-                onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) }
-            )
-        }
-
-        composable(
-            route = Screen.EventScreen.route,
-            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) { _ ->
-            val viewModel: EventViewModel = hiltViewModel()
-            val event by viewModel.event.collectAsStateWithLifecycle()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
-
-            EventScreen(
-                event = event,
-                uiState = uiState,
-                onHeaderClick = {
-                    event?.let { navController.navigate(Screen.EventDetail.passArgs(it.id)) }
-                },
-                onBackClick = { navController.popBackStack() }
+                onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) },
+                onRefresh = {viewModel.onRefresh()}
             )
         }
 
         composable(
             route = Screen.EventDetail.route,
             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) {
+        ) { backStackEntry ->
             val viewModel: EventDetailViewModel = hiltViewModel()
-            val event by viewModel.event.collectAsStateWithLifecycle()
+            val detailedEvent by viewModel.detailedEvent.collectAsStateWithLifecycle()
             val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val showArchiveDialog by viewModel.showArchiveDialog.collectAsStateWithLifecycle()
+            val showDeleteDialog by viewModel.showDeleteDialog.collectAsStateWithLifecycle()
+            val canEdit by viewModel.canEdit.collectAsStateWithLifecycle()
+            val canUploadAvatar by viewModel.canUploadAvatar.collectAsStateWithLifecycle()
+            val canArchive by viewModel.canArchive.collectAsStateWithLifecycle()
+            val canDelete by viewModel.canDelete.collectAsStateWithLifecycle()
+            val canManageMembers by viewModel.canManageMembers.collectAsStateWithLifecycle()
+            val canToggleAdmin by viewModel.canToggleAdmin.collectAsStateWithLifecycle()
+
+            LaunchedEffect(Unit) {
+                viewModel.navigationEvents.collect { event ->
+                    when (event) {
+                        is DetailNavigationEvent.EditEvent ->
+                            navController.navigate(Screen.EditEvent.passArgs(event.eventId))
+                        is DetailNavigationEvent.UploadAvatar ->
+                            navController.navigate(Screen.EventAvatarUpload.passArgs(event.eventId))
+                        DetailNavigationEvent.GoBack -> navController.popBackStack()
+                        else -> {}
+                    }
+                }
+            }
 
             EventDetailScreen(
-                event = event,
+                detailedEvent = detailedEvent,
                 uiState = uiState,
-                onBackClick = { navController.popBackStack() }
+                showArchiveDialog = showArchiveDialog,
+                showDeleteDialog = showDeleteDialog,
+                canEdit = canEdit,
+                canUploadAvatar = canUploadAvatar,
+                canArchive = canArchive,
+                canDelete = canDelete,
+                canManageMembers = canManageMembers,
+                canToggleAdmin = canToggleAdmin,
+                currentUserId = viewModel.getCurrentUserId(),
+                events = viewModel.navigationEvents,
+                onBackClick = { navController.popBackStack() },
+                onEditClick = { viewModel.onEditClick() },
+                onUploadAvatarClick = { viewModel.onUploadAvatarClick() },
+                onArchiveClick = { viewModel.onArchiveClick() },
+                onDeleteClick = { viewModel.onDeleteClick() },
+                onDismissArchiveDialog = { viewModel.onDismissArchiveDialog() },
+                onConfirmArchive = { viewModel.onConfirmArchive() },
+                onDismissDeleteDialog = { viewModel.onDismissDeleteDialog() },
+                onConfirmDelete = { viewModel.onConfirmDelete() },
+                onRemoveMemberClick = { userId -> viewModel.removeMember(userId) },
+                onToggleAdminClick = { member -> viewModel.toggleAdmin(member) }
             )
         }
 
-        composable(Screen.EditProfile.route) {
-            val viewModel: EditProfileViewModel = hiltViewModel()
-            val userData by viewModel.userData.collectAsStateWithLifecycle()
+        composable(
+            route = Screen.EditEvent.route,
+            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+        ) { backStackEntry ->
+            val viewModel: EditEventViewModel = hiltViewModel()
+            val title by viewModel.title.collectAsStateWithLifecycle()
+            val location by viewModel.location.collectAsStateWithLifecycle()
+            val description by viewModel.description.collectAsStateWithLifecycle()
+            val startDate by viewModel.startDate.collectAsStateWithLifecycle()
+            val startTime by viewModel.startTime.collectAsStateWithLifecycle()
+            val endDate by viewModel.endDate.collectAsStateWithLifecycle()
+            val endTime by viewModel.endTime.collectAsStateWithLifecycle()
+            val color by viewModel.color.collectAsStateWithLifecycle()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
+            val titleError by viewModel.titleError.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
-                viewModel.loadUser()
+                viewModel.navigationEvents.collect { event ->
+                    when (event) {
+                        EditEventNavigation.GoBack -> navController.popBackStack()
+                    }
+                }
             }
 
-            EditProfile(
-                userData = userData,
-                onBackClick = { navController.popBackStack() },
-                viewModel = viewModel
+            val uiStateConverted = when (val state = requestState) {
+                is RequestState.Idle -> CreateEventUiState.Idle
+                is RequestState.Loading -> CreateEventUiState.Loading
+                is RequestState.Success -> CreateEventUiState.Idle
+                is RequestState.Error -> CreateEventUiState.Error(state.message)
+            }
+
+            CreateEventScreen(
+                formData = EventFormData(
+                    title = title,
+                    description = description,
+                    location = location,
+                    startDate = startDate,
+                    startTime = startTime,
+                    endDate = endDate,
+                    endTime = endTime,
+                    color = color
+                ),
+                uiState = uiStateConverted,
+                titleError = titleError,
+                onTitleChange = { viewModel.updateTitle(it) },
+                onDescriptionChange = { viewModel.updateDescription(it) },
+                onLocationChange = { viewModel.updateLocation(it) },
+                onStartDateChange = { viewModel.updateStartDate(it) },
+                onStartTimeChange = { viewModel.updateStartTime(it) },
+                onEndDateChange = { viewModel.updateEndDate(it) },
+                onEndTimeChange = { viewModel.updateEndTime(it) },
+                onColorChange = { viewModel.updateColor(it) },
+                onSaveClick = { viewModel.updateEvent() }
             )
         }
     }

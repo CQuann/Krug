@@ -109,4 +109,9 @@ class MainAppViewModel @Inject constructor(
             }
         }
     }
+
+    fun onRefresh() {
+        if (_isRefreshing.value) return
+        loadEvents(reset = true)
+    }
 }

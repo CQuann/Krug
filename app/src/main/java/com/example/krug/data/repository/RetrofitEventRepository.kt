@@ -5,10 +5,12 @@ import android.net.Uri
 import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.event.CreateEventRequest
+import com.example.krug.data.model.event.DetailedEvent
 import com.example.krug.data.model.event.Event
 import com.example.krug.data.model.event.EventsListResponse
 import com.example.krug.data.model.event.StatusUpdateRequest
 import com.example.krug.data.model.event.UpdateEventRequest
+import com.example.krug.data.model.event.UpdateMemberPermissionsRequest
 import com.example.krug.data.network.EventApi
 import com.example.krug.utils.ImageUtils
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -47,7 +49,7 @@ class RetrofitEventRepository @Inject constructor(
         }
     }
 
-    override suspend fun getEvent(id: String): DataResult<Event> {
+    override suspend fun getEvent(id: String): DataResult<DetailedEvent> {
         return try {
             val response = eventApi.getEvent(id)
             DataResult.Success(response)
@@ -97,6 +99,28 @@ class RetrofitEventRepository @Inject constructor(
             else DataResult.Error("Ошибка загрузки: ${response.code()}")
         } catch (e: Exception) {
             DataResult.Error("Ошибка: ${e.message}")
+        }
+    }
+
+    override suspend fun removeMember(eventId: String, userId: String): DataResult<Unit> {
+        return try {
+            val response = eventApi.removeMember(eventId, userId)
+            if (response.isSuccessful) DataResult.Success(Unit)
+            else DataResult.Error("Ошибка удаления участника: ${response.code()}")
+        } catch (e: Exception) {
+            DataResult.Error("Ошибка сети: ${e.message}")
+        }
+    }
+
+    override suspend fun updateMemberPermissions(eventId: String, userId: String, permissions: String): DataResult<Unit> {
+        return try {
+            val response = eventApi.updateMemberPermissions(eventId, userId,
+                UpdateMemberPermissionsRequest(permissions)
+            )
+            if (response.isSuccessful) DataResult.Success(Unit)
+            else DataResult.Error("Ошибка изменения прав: ${response.code()}")
+        } catch (e: Exception) {
+            DataResult.Error("Ошибка сети: ${e.message}")
         }
     }
 }

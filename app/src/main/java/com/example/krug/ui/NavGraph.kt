@@ -3,19 +3,17 @@ package com.example.krug.ui
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.krug.data.model.RequestState
 import com.example.krug.ui.screens.auth.AvatarUploadScreen
 import com.example.krug.ui.screens.auth.AvatarUploadViewModel
 import com.example.krug.ui.screens.auth.LoginEmailScreen
 import com.example.krug.ui.screens.auth.LoginEmailViewModel
-import com.example.krug.ui.screens.auth.RegisterNavigation
 import com.example.krug.ui.screens.auth.RegisterProfileScreen
 import com.example.krug.ui.screens.auth.RegisterProfileViewModel
 import com.example.krug.ui.screens.auth.VerifyCodeScreen
@@ -25,14 +23,12 @@ import com.example.krug.ui.screens.event.EventScreen
 import com.example.krug.ui.screens.event.EventViewModel
 import com.example.krug.ui.screens.event.createEvent.CreateEventNavigation
 import com.example.krug.ui.screens.event.createEvent.CreateEventScreen
-import com.example.krug.ui.screens.event.createEvent.CreateEventUiState
 import com.example.krug.ui.screens.event.createEvent.CreateEventViewModel
 import com.example.krug.ui.screens.event.createEvent.EventAvatarUploadScreen
 import com.example.krug.ui.screens.event.createEvent.EventAvatarUploadViewModel
 import com.example.krug.ui.screens.event.createEvent.EventFormData
 import com.example.krug.ui.screens.event.editEvent.EditEventNavigation
 import com.example.krug.ui.screens.event.editEvent.EditEventViewModel
-import com.example.krug.ui.screens.event.eventDetail.DetailNavigationEvent
 import com.example.krug.ui.screens.event.eventDetail.EventDetailScreen
 import com.example.krug.ui.screens.event.eventDetail.EventDetailViewModel
 import com.example.krug.ui.screens.main.MainAppScreen
@@ -51,35 +47,26 @@ fun SetupNavGraph() {
         // Splash
         composable(Screen.Splash.route) {
             val viewModel: SplashViewModel = hiltViewModel()
-            val navigationEvent = viewModel.navigationEvent
-
             LaunchedEffect(Unit) {
-                navigationEvent.collect { event ->
+                viewModel.navigationEvent.collect { event ->
                     when (event) {
-                        SplashNavigation.GoToMain -> {
-                            navController.navigate(Screen.MainApp.route) {
-                                popUpTo(Screen.Splash.route) { inclusive = true }
-                            }
+                        SplashNavigation.GoToMain -> navController.navigate(Screen.MainApp.route) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
                         }
-                        SplashNavigation.GoToLogin -> {
-                            navController.navigate(Screen.LoginEmail.route) {
-                                popUpTo(Screen.Splash.route) { inclusive = true }
-                            }
+                        SplashNavigation.GoToLogin -> navController.navigate(Screen.LoginEmail.route) {
+                            popUpTo(Screen.Splash.route) { inclusive = true }
                         }
                     }
                 }
             }
-
-            SplashScreen(
-                onCheckAuth = { viewModel.checkAuth() }
-            )
+            SplashScreen(onCheckAuth = { viewModel.checkAuth() })
         }
 
         // LoginEmail
         composable(Screen.LoginEmail.route) {
             val viewModel: LoginEmailViewModel = hiltViewModel()
             val email by viewModel.email.collectAsStateWithLifecycle()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
             val emailError by viewModel.emailError.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
@@ -90,11 +77,11 @@ fun SetupNavGraph() {
 
             LoginEmailScreen(
                 email = email,
-                uiState = uiState,
+                requestState = requestState,
+                emailError = emailError,
                 onEmailChange = { viewModel.updateEmail(it) },
                 onSendCode = { viewModel.sendCode() },
-                onResetError = { viewModel.resetError() },
-                emailError = emailError
+                onResetError = { viewModel.resetError() }
             )
         }
 
@@ -105,89 +92,89 @@ fun SetupNavGraph() {
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
             val viewModel: VerifyCodeViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
+            val canResend by viewModel.canResend.collectAsStateWithLifecycle()
+            val resendCooldown by viewModel.resendCooldown.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
-                viewModel.navigationEvent.collect { navigation ->
+                viewModel.navigationEvents.collect { navigation ->
                     when (navigation) {
-                        is VerifyNavigation.GoToMain -> {
-                            navController.navigate(Screen.MainApp.route) {
-                                popUpTo(Screen.LoginEmail.route) { inclusive = true }
-                            }
+                        is VerifyNavigation.GoToMain -> navController.navigate(Screen.MainApp.route) {
+                            popUpTo(Screen.LoginEmail.route) { inclusive = true }
                         }
-
-                        is VerifyNavigation.GoToRegister -> {
-                            navController.navigate(
-                                Screen.RegisterProfile.passArgs(navigation.email)
-                            )
-                        }
+                        is VerifyNavigation.GoToRegister -> navController.navigate(
+                            Screen.RegisterProfile.passArgs(navigation.email)
+                        )
                     }
                 }
             }
 
             VerifyCodeScreen(
                 email = email,
-                uiState = uiState,
+                requestState = requestState,
+                canResend = canResend,
+                resendCooldown = resendCooldown,
+                snackbarEvents = viewModel.snackbarEvents,
                 onCodeCompleted = { code -> viewModel.verifyCode(email, code) },
-                onResetError = { viewModel.resetError() }
+                onResendCode = { viewModel.resendCode(email) }
             )
         }
 
         // Registration
         composable(
             route = Screen.RegisterProfile.route,
-            arguments = listOf(
-                navArgument("email") { type = NavType.StringType }
-            )
+            arguments = listOf(navArgument("email") { type = NavType.StringType })
         ) { backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
             val viewModel: RegisterProfileViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
             val displayName by viewModel.displayName.collectAsStateWithLifecycle()
             val username by viewModel.username.collectAsStateWithLifecycle()
             val birthday by viewModel.birthday.collectAsStateWithLifecycle()
+            val description by viewModel.description.collectAsStateWithLifecycle()
             val usernameAvailable by viewModel.usernameAvailable.collectAsStateWithLifecycle()
             val isCheckingUsername by viewModel.isCheckingUsername.collectAsStateWithLifecycle()
             val displayNameError by viewModel.displayNameError.collectAsStateWithLifecycle()
             val usernameError by viewModel.usernameError.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
-                viewModel.navigationEvent.collect { navigation ->
+                viewModel.navigationEvents.collect { navigation ->
                     when (navigation) {
-                        RegisterNavigation.GoToAvatarUpload -> {
+                        RegisterProfileViewModel.RegisterNavigation.GoToAvatarUpload ->
                             navController.navigate(Screen.AvatarUpload.route) {
                                 popUpTo(Screen.RegisterProfile.route) { inclusive = true }
                             }
-                        }
                     }
                 }
             }
 
             RegisterProfileScreen(
-                uiState = uiState,
+                requestState = requestState,
                 displayName = displayName,
                 username = username,
                 birthday = birthday,
+                description = description,
                 usernameAvailable = usernameAvailable,
                 isCheckingUsername = isCheckingUsername,
+                displayNameError = displayNameError,
+                usernameError = usernameError,
+                snackbarEvents = viewModel.snackbarEvents,
                 onDisplayNameChange = { viewModel.updateDisplayName(it) },
                 onUsernameChange = { viewModel.updateUsername(it) },
                 onBirthdayChange = { viewModel.updateBirthday(it) },
-                onRegisterClick = { viewModel.register(email) },
-                onResetError = { viewModel.resetError() },
-                displayNameError = displayNameError,
-                usernameError = usernameError
+                onDescriptionChange = { viewModel.updateDescription(it) },
+                onRegisterClick = { viewModel.register(email) }
             )
         }
 
         // Uploading user's avatar
         composable(Screen.AvatarUpload.route) {
             val viewModel: AvatarUploadViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
             val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
-                viewModel.navigationEvent.collect {
+                viewModel.navigationEvents.collect {
                     navController.navigate(Screen.MainApp.route) {
                         popUpTo(Screen.LoginEmail.route) { inclusive = true }
                     }
@@ -195,8 +182,9 @@ fun SetupNavGraph() {
             }
 
             AvatarUploadScreen(
-                uiState = uiState,
+                requestState = requestState,
                 avatarUri = avatarUri,
+                snackbarEvents = viewModel.snackbarEvents,
                 onSetAvatarUri = { viewModel.setAvatarUri(it) },
                 onUploadAvatar = { viewModel.uploadAvatar() },
                 onSkipAvatar = { viewModel.skipAvatar() }
@@ -207,11 +195,11 @@ fun SetupNavGraph() {
         composable(Screen.CreateEvent.route) {
             val viewModel: CreateEventViewModel = hiltViewModel()
             val formData by viewModel.formData.collectAsStateWithLifecycle()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
             val titleError by viewModel.titleError.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
-                viewModel.navigationEvent.collect { nav ->
+                viewModel.navigationEvents.collect { nav ->
                     when (nav) {
                         is CreateEventNavigation.GoToEventAvatarUpload ->
                             navController.navigate(Screen.EventAvatarUpload.passArgs(nav.eventId))
@@ -221,8 +209,9 @@ fun SetupNavGraph() {
 
             CreateEventScreen(
                 formData = formData,
-                uiState = uiState,
+                requestState = requestState,
                 titleError = titleError,
+                snackbarEvents = viewModel.snackbarEvents,
                 onTitleChange = viewModel::updateTitle,
                 onDescriptionChange = viewModel::updateDescription,
                 onLocationChange = viewModel::updateLocation,
@@ -239,13 +228,13 @@ fun SetupNavGraph() {
         composable(
             route = Screen.EventAvatarUpload.route,
             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) { backStackEntry ->
+        ) { _ ->
             val viewModel: EventAvatarUploadViewModel = hiltViewModel()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
             val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
-                viewModel.navigationEvent.collect {
+                viewModel.navigationEvents.collect {
                     navController.navigate(Screen.MainApp.route) {
                         popUpTo(Screen.MainApp.route) { inclusive = true }
                     }
@@ -253,8 +242,9 @@ fun SetupNavGraph() {
             }
 
             EventAvatarUploadScreen(
-                uiState = uiState,
+                requestState = requestState,
                 avatarUri = avatarUri,
+                snackbarEvents = viewModel.snackbarEvents,
                 onSetAvatarUri = viewModel::setAvatarUri,
                 onUploadAvatar = viewModel::uploadAvatar,
                 onSkip = viewModel::skip
@@ -265,7 +255,6 @@ fun SetupNavGraph() {
         composable(Screen.MainApp.route) {
             val viewModel: MainAppViewModel = hiltViewModel()
             val userId by viewModel.userId.collectAsStateWithLifecycle()
-            val userData by viewModel.userData.collectAsStateWithLifecycle()
             val events by viewModel.events.collectAsStateWithLifecycle()
             val currentStatus by viewModel.currentStatus.collectAsStateWithLifecycle()
             val totalEvents by viewModel.totalEvents.collectAsStateWithLifecycle()
@@ -275,7 +264,6 @@ fun SetupNavGraph() {
 
             MainAppScreen(
                 userId = userId,
-                userData = userData,
                 events = events,
                 currentStatus = currentStatus,
                 totalEvents = totalEvents,
@@ -291,14 +279,34 @@ fun SetupNavGraph() {
             )
         }
 
+        // Event screen (tabs: чат, планирование, альбом)
+        composable(
+            route = Screen.EventScreen.route,
+            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+        ) { _ ->
+            val viewModel: EventViewModel = hiltViewModel()
+            val event by viewModel.event.collectAsStateWithLifecycle()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
+
+            EventScreen(
+                event = event,
+                requestState = requestState,
+                snackbarEvents = viewModel.snackbarEvents,
+                onHeaderClick = {
+                    event?.let { navController.navigate(Screen.EventDetail.passArgs(it.eventId)) }
+                },
+                onBackClick = { navController.popBackStack() }
+            )
+        }
+
         // Event detail screen
         composable(
             route = Screen.EventDetail.route,
             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) { backStackEntry ->
+        ) { _ ->
             val viewModel: EventDetailViewModel = hiltViewModel()
             val detailedEvent by viewModel.detailedEvent.collectAsStateWithLifecycle()
-            val uiState by viewModel.uiState.collectAsStateWithLifecycle()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
             val showArchiveDialog by viewModel.showArchiveDialog.collectAsStateWithLifecycle()
             val showDeleteDialog by viewModel.showDeleteDialog.collectAsStateWithLifecycle()
             val canEdit by viewModel.canEdit.collectAsStateWithLifecycle()
@@ -311,19 +319,18 @@ fun SetupNavGraph() {
             LaunchedEffect(Unit) {
                 viewModel.navigationEvents.collect { event ->
                     when (event) {
-                        is DetailNavigationEvent.EditEvent ->
+                        is EventDetailViewModel.DetailNavigationEvent.EditEvent ->
                             navController.navigate(Screen.EditEvent.passArgs(event.eventId))
-                        is DetailNavigationEvent.UploadAvatar ->
+                        is EventDetailViewModel.DetailNavigationEvent.UploadAvatar ->
                             navController.navigate(Screen.EventAvatarUpload.passArgs(event.eventId))
-                        DetailNavigationEvent.GoBack -> navController.popBackStack()
-                        else -> {}
+                        EventDetailViewModel.DetailNavigationEvent.GoBack -> navController.popBackStack()
                     }
                 }
             }
 
             EventDetailScreen(
                 detailedEvent = detailedEvent,
-                uiState = uiState,
+                requestState = requestState,
                 showArchiveDialog = showArchiveDialog,
                 showDeleteDialog = showDeleteDialog,
                 canEdit = canEdit,
@@ -333,7 +340,7 @@ fun SetupNavGraph() {
                 canManageMembers = canManageMembers,
                 canToggleAdmin = canToggleAdmin,
                 currentUserId = viewModel.getCurrentUserId(),
-                events = viewModel.navigationEvents,
+                snackbarEvents = viewModel.snackbarEvents,
                 onBackClick = { navController.popBackStack() },
                 onEditClick = { viewModel.onEditClick() },
                 onUploadAvatarClick = { viewModel.onUploadAvatarClick() },
@@ -352,7 +359,7 @@ fun SetupNavGraph() {
         composable(
             route = Screen.EditEvent.route,
             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) { backStackEntry ->
+        ) { _ ->
             val viewModel: EditEventViewModel = hiltViewModel()
             val title by viewModel.title.collectAsStateWithLifecycle()
             val location by viewModel.location.collectAsStateWithLifecycle()
@@ -373,13 +380,6 @@ fun SetupNavGraph() {
                 }
             }
 
-            val uiStateConverted = when (val state = requestState) {
-                is RequestState.Idle -> CreateEventUiState.Idle
-                is RequestState.Loading -> CreateEventUiState.Loading
-                is RequestState.Success -> CreateEventUiState.Idle
-                is RequestState.Error -> CreateEventUiState.Error(state.message)
-            }
-
             CreateEventScreen(
                 formData = EventFormData(
                     title = title,
@@ -391,8 +391,9 @@ fun SetupNavGraph() {
                     endTime = endTime,
                     color = color
                 ),
-                uiState = uiStateConverted,
+                requestState = requestState,
                 titleError = titleError,
+                snackbarEvents = viewModel.snackbarEvents,
                 onTitleChange = { viewModel.updateTitle(it) },
                 onDescriptionChange = { viewModel.updateDescription(it) },
                 onLocationChange = { viewModel.updateLocation(it) },
@@ -405,20 +406,58 @@ fun SetupNavGraph() {
             )
         }
 
-        // Profile screen (new)
+        // Profile screen
         composable(Screen.Profile.route) {
             val viewModel: ProfileViewModel = hiltViewModel()
+            val userData by viewModel.userData.collectAsStateWithLifecycle()
+            val isEditing by viewModel.isEditing.collectAsStateWithLifecycle()
+            val displayName by viewModel.displayName.collectAsStateWithLifecycle()
+            val username by viewModel.username.collectAsStateWithLifecycle()
+            val email by viewModel.email.collectAsStateWithLifecycle()
+            val birthday by viewModel.birthday.collectAsStateWithLifecycle()
+            val description by viewModel.description.collectAsStateWithLifecycle()
+            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
+            val isEditingAvatar by viewModel.isEditingAvatar.collectAsStateWithLifecycle()
+            val usernameAvailable by viewModel.usernameAvailable.collectAsStateWithLifecycle()
+            val isCheckingUsername by viewModel.isCheckingUsername.collectAsStateWithLifecycle()
+            val usernameError by viewModel.usernameError.collectAsStateWithLifecycle()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
                 viewModel.loadUser()
             }
 
             ProfileScreen(
+                userData = userData,
+                isEditing = isEditing,
+                displayName = displayName,
+                username = username,
+                email = email,
+                birthday = birthday,
+                description = description,
+                avatarUri = avatarUri,
+                isEditingAvatar = isEditingAvatar,
+                usernameAvailable = usernameAvailable,
+                isCheckingUsername = isCheckingUsername,
+                usernameError = usernameError,
+                requestState = requestState,
+                events = viewModel.events,
                 onBackClick = { navController.popBackStack() },
-                onLogoutClick = { navController.navigate(Screen.LoginEmail.route) {
-                    popUpTo(Screen.Splash.route) { inclusive = true }
-                }},
-                viewModel = viewModel
+                onEnterEditMode = { viewModel.enterEditMode() },
+                onCancelEdit = { viewModel.cancelEditMode() },
+                onUpdateDisplayName = { viewModel.updateDisplayName(it) },
+                onUpdateUsername = { viewModel.updateUsername(it) },
+                onUpdateBirthday = { viewModel.updateBirthday(it) },
+                onUpdateDescription = { viewModel.updateDescription(it) },
+                onStartAvatarEditing = { viewModel.startAvatarEditing() },
+                onSetAvatarUri = { viewModel.setAvatarUri(it) },
+                onSaveProfile = { viewModel.saveProfile() },
+                onLogout = { viewModel.logout() },
+                onNavigateToLogin = {
+                    navController.navigate(Screen.LoginEmail.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
             )
         }
     }

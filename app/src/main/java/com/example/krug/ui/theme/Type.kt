@@ -1,34 +1,23 @@
 package com.example.krug.ui.theme
 
 import androidx.compose.material3.Typography
-import androidx.compose.ui.text.TextStyle
-import androidx.compose.ui.text.font.FontFamily
-import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.unit.sp
 
-// Set of Material typography styles to start with
-val Typography = Typography(
-    bodyLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 16.sp,
-        lineHeight = 24.sp,
-        letterSpacing = 0.5.sp
-    )
-    /* Other default text styles to override
-    titleLarge = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Normal,
-        fontSize = 22.sp,
-        lineHeight = 28.sp,
-        letterSpacing = 0.sp
-    ),
-    labelSmall = TextStyle(
-        fontFamily = FontFamily.Default,
-        fontWeight = FontWeight.Medium,
-        fontSize = 11.sp,
-        lineHeight = 16.sp,
-        letterSpacing = 0.5.sp
-    )
-    */
+private val baseline = Typography()
+
+val AppTypography = Typography(
+    displayLarge = baseline.displayLarge.copy(fontFamily = Fonts.Montserrat),
+    displayMedium = baseline.displayMedium.copy(fontFamily = Fonts.Montserrat),
+    displaySmall = baseline.displaySmall.copy(fontFamily = Fonts.Montserrat),
+    headlineLarge = baseline.headlineLarge.copy(fontFamily = Fonts.Montserrat),
+    headlineMedium = baseline.headlineMedium.copy(fontFamily = Fonts.Montserrat),
+    headlineSmall = baseline.headlineSmall.copy(fontFamily = Fonts.Montserrat),
+    titleLarge = baseline.titleLarge.copy(fontFamily = Fonts.Montserrat),
+    titleMedium = baseline.titleMedium.copy(fontFamily = Fonts.Montserrat),
+    titleSmall = baseline.titleSmall.copy(fontFamily = Fonts.Montserrat),
+    bodyLarge = baseline.bodyLarge.copy(fontFamily = Fonts.SourceSansPro),
+    bodyMedium = baseline.bodyMedium.copy(fontFamily = Fonts.SourceSansPro),
+    bodySmall = baseline.bodySmall.copy(fontFamily = Fonts.SourceSansPro),
+    labelLarge = baseline.labelLarge.copy(fontFamily = Fonts.SourceSansPro),
+    labelMedium = baseline.labelMedium.copy(fontFamily = Fonts.SourceSansPro),
+    labelSmall = baseline.labelSmall.copy(fontFamily = Fonts.SourceSansPro),
 )

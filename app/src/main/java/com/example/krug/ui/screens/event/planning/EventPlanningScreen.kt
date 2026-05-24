@@ -1,30 +1,16 @@
 package com.example.krug.ui.screens.event.planning
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SnackbarHost
-import androidx.compose.material3.SnackbarHostState
-import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.example.krug.ui.components.planning.ItemListModuleCard
 import com.example.krug.ui.components.planning.PollModuleCard
@@ -41,7 +27,7 @@ fun EventPlanningScreen(
     val snackbarHostState = remember { SnackbarHostState() }
 
     LaunchedEffect(Unit) {
-        viewModel.errorMessage.collect { msg ->
+        viewModel.snackbarEvents.collect { msg ->
             snackbarHostState.showSnackbar(msg)
         }
     }
@@ -50,15 +36,13 @@ fun EventPlanningScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             if (creationMode == CreationMode.None) {
-                FloatingActionButton(
-                    onClick = { viewModel.onFabClick() }
-                ) {
+                FloatingActionButton(onClick = { viewModel.onFabClick() }) {
                     Icon(Icons.Default.Add, contentDescription = "Добавить модуль")
                 }
             }
         }
     ) { padding ->
-        Box(modifier = Modifier.fillMaxSize()) {
+        Box(modifier = Modifier.fillMaxSize().padding(padding)) {
             when (creationMode) {
                 CreationMode.None -> {
                     when (uiState) {
@@ -68,8 +52,16 @@ fun EventPlanningScreen(
                             }
                         }
                         is PlanningUiState.Error -> {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(
+                                Modifier.fillMaxSize().padding(16.dp),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
                                 Text(uiState.message, color = MaterialTheme.colorScheme.error)
+                                Spacer(Modifier.height(16.dp))
+                                Button(onClick = { viewModel.loadModules() }) {
+                                    Text("Повторить")
+                                }
                             }
                         }
                         is PlanningUiState.Content -> {
@@ -125,7 +117,7 @@ fun EventPlanningScreen(
                     val requestState by pollViewModel.requestState.collectAsStateWithLifecycle()
 
                     LaunchedEffect(Unit) {
-                        pollViewModel.createdEvent.collect {
+                        pollViewModel.navigationEvents.collect {
                             viewModel.onCreationFinished()
                         }
                     }
@@ -134,9 +126,10 @@ fun EventPlanningScreen(
                         title = pollTitle,
                         options = pollOptions,
                         multipleChoice = multipleChoice,
-                        questionError = titleError,
+                        titleError = titleError,
                         optionErrors = optionErrors,
                         requestState = requestState,
+                        snackbarEvents = pollViewModel.snackbarEvents,
                         onQuestionChange = pollViewModel::updateTitle,
                         onOptionChange = pollViewModel::updateOption,
                         onAddOption = pollViewModel::addOption,
@@ -147,71 +140,21 @@ fun EventPlanningScreen(
                     )
                 }
                 CreationMode.ItemList -> {
-                    val listViewModel: CreateListViewModel = hiltViewModel()
-                    listViewModel.init(isTaskList = false)
-                    val title by listViewModel.title.collectAsStateWithLifecycle()
-                    val items by listViewModel.items.collectAsStateWithLifecycle()
-                    val titleError by listViewModel.titleError.collectAsStateWithLifecycle()
-                    val itemErrors by listViewModel.itemErrors.collectAsStateWithLifecycle()
-                    val requestState by listViewModel.requestState.collectAsStateWithLifecycle()
-
-                    LaunchedEffect(Unit) {
-                        listViewModel.createdEvent.collect {
-                            viewModel.onCreationFinished()
-                        }
-                    }
-
-                    CreateItemOrTaskScreen(
-                        title = title,
-                        items = items,
-                        titleError = titleError,
-                        itemErrors = itemErrors,
-                        requestState = requestState,
+                    CreateListScreenWrapper(
                         isTask = false,
-                        onTitleChange = listViewModel::updateTitle,
-                        onItemChange = listViewModel::updateItem,
-                        onAddItem = listViewModel::addItem,
-                        onRemoveItem = listViewModel::removeItem,
-                        onCreate = { listViewModel.create(viewModel.getEventId()) },
-                        onCancel = { viewModel.onCreationFinished() }
+                        eventPlanningViewModel = viewModel
                     )
                 }
                 CreationMode.TaskList -> {
-                    val listViewModel: CreateListViewModel = hiltViewModel()
-                    listViewModel.init(isTaskList = true)
-                    val title by listViewModel.title.collectAsStateWithLifecycle()
-                    val items by listViewModel.items.collectAsStateWithLifecycle()
-                    val titleError by listViewModel.titleError.collectAsStateWithLifecycle()
-                    val itemErrors by listViewModel.itemErrors.collectAsStateWithLifecycle()
-                    val requestState by listViewModel.requestState.collectAsStateWithLifecycle()
-
-                    LaunchedEffect(Unit) {
-                        listViewModel.createdEvent.collect {
-                            viewModel.onCreationFinished()
-                        }
-                    }
-
-                    CreateItemOrTaskScreen(
-                        title = title,
-                        items = items,
-                        titleError = titleError,
-                        itemErrors = itemErrors,
-                        requestState = requestState,
+                    CreateListScreenWrapper(
                         isTask = true,
-                        onTitleChange = listViewModel::updateTitle,
-                        onItemChange = listViewModel::updateItem,
-                        onAddItem = listViewModel::addItem,
-                        onRemoveItem = listViewModel::removeItem,
-                        onCreate = { listViewModel.create(viewModel.getEventId()) },
-                        onCancel = { viewModel.onCreationFinished() }
+                        eventPlanningViewModel = viewModel
                     )
                 }
             }
         }
     }
 
-
-    // Диалог выбора типа
     if (showTypeDialog) {
         SelectModuleTypeDialog(
             onDismiss = { viewModel.dismissTypeDialog() },
@@ -220,4 +163,45 @@ fun EventPlanningScreen(
             onSelectTaskList = { viewModel.startCreatingTaskList() }
         )
     }
+}
+
+@Composable
+private fun CreateListScreenWrapper(
+    isTask: Boolean,
+    eventPlanningViewModel: EventPlanningViewModel
+) {
+    val listViewModel: CreateListViewModel = hiltViewModel(
+        key = if (isTask) "TaskList" else "ItemList"
+    )
+    // Инициализируем тип списка
+    LaunchedEffect(Unit) {
+        listViewModel.init(isTaskList = isTask)
+    }
+
+    val title by listViewModel.title.collectAsStateWithLifecycle()
+    val items by listViewModel.items.collectAsStateWithLifecycle()
+    val titleError by listViewModel.titleError.collectAsStateWithLifecycle()
+    val itemErrors by listViewModel.itemErrors.collectAsStateWithLifecycle()
+    val requestState by listViewModel.requestState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(Unit) {
+        listViewModel.navigationEvents.collect {
+            eventPlanningViewModel.onCreationFinished()
+        }
+    }
+
+    CreateItemOrTaskScreen(
+        title = title,
+        items = items,
+        titleError = titleError,
+        itemErrors = itemErrors,
+        requestState = requestState,
+        isTask = isTask,
+        onTitleChange = listViewModel::updateTitle,
+        onItemChange = listViewModel::updateItem,
+        onAddItem = listViewModel::addItem,
+        onRemoveItem = listViewModel::removeItem,
+        onCreate = { listViewModel.create(eventPlanningViewModel.getEventId()) },
+        onCancel = { eventPlanningViewModel.onCreationFinished() }
+    )
 }

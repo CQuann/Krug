@@ -55,7 +55,7 @@ fun EventCard(event: Event, onClick: () -> Unit) {
             // Аватар события
             Box(modifier = Modifier.size(48.dp)) {
                 AsyncImage(
-                    model = "${Constants.BASE_URL}/event-avatars/${event.id}",
+                    model = "${Constants.BASE_URL}/event-avatars/${event.eventId}",
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()
@@ -138,16 +138,14 @@ fun EventCardFullPreview() {
     KrugTheme {
         EventCard(
             event = Event(
-                id = "1",
+                eventId = "1",
                 title = "Пикник в парке",
                 location = "ЦПКиО",
                 startDateTime = "2026-05-10T15:00:00Z",
                 endDateTime = "2026-05-10T18:00:00Z",
                 color = "#3498DB",
                 status = "active",
-                description = null,
-                createdBy = "",
-                createdAt = ""
+                description = null
             ),
             onClick = {}
         )
@@ -160,16 +158,14 @@ fun EventCardMinimalPreview() {
     KrugTheme {
         EventCard(
             event = Event(
-                id = "2",
+                eventId = "2",
                 title = "Встреча выпускников",
                 startDateTime = "2026-06-01",
                 endDateTime = null,
                 color = "#FF5733",
                 status = "active",
                 description = null,
-                location = null,
-                createdBy = "",
-                createdAt = ""
+                location = null
             ),
             onClick = {}
         )
@@ -182,16 +178,14 @@ fun EventCardNoDatePreview() {
     KrugTheme {
         EventCard(
             event = Event(
-                id = "3",
+                eventId = "3",
                 title = "День рождения",
                 color = "#28B463",
                 status = "archived",
                 description = null,
                 location = null,
                 startDateTime = null,
-                endDateTime = null,
-                createdBy = "",
-                createdAt = ""
+                endDateTime = null
             ),
             onClick = {}
         )

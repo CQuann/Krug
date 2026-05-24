@@ -28,6 +28,8 @@ runtime = "1.10.6"
 runtimeVersion = "1.11.1"
 foundationVersion = "1.11.1"
 uiText = "1.11.1"
+foundationLayoutVersion = "1.11.2"
+uiTextGoogleFonts = "1.11.2"
 
 
 
@@ -67,6 +69,8 @@ androidx-compose-runtime = { group = "androidx.compose.runtime", name = "runtime
 androidx-runtime = { group = "androidx.compose.runtime", name = "runtime", version.ref = "runtimeVersion" }
 androidx-foundation = { group = "androidx.compose.foundation", name = "foundation", version.ref = "foundationVersion" }
 androidx-compose-ui-text = { group = "androidx.compose.ui", name = "ui-text", version.ref = "uiText" }
+androidx-foundation-layout = { group = "androidx.compose.foundation", name = "foundation-layout", version.ref = "foundationLayoutVersion" }
+androidx-compose-ui-text-google-fonts = { group = "androidx.compose.ui", name = "ui-text-google-fonts", version.ref = "uiTextGoogleFonts" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

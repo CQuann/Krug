@@ -11,21 +11,26 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.krug.ui.theme.KrugTheme
 
+// ui/components/DetailField.kt
 @Composable
 fun DetailField(
     label: String,
     value: String?,
-    icon: ImageVector? = null
+    icon: ImageVector? = null,
+    modifier: Modifier = Modifier,
+    maxLines: Int = Int.MAX_VALUE,
+    overflow: TextOverflow = TextOverflow.Clip
 ) {
     val displayValue = value?.ifBlank { null } ?: "Не выбрано"
     val isMissing = value.isNullOrBlank()
 
     Surface(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp),
+        modifier = modifier.fillMaxWidth().padding(vertical = 4.dp),
         color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f),
         shape = MaterialTheme.shapes.medium
     ) {
@@ -52,7 +57,9 @@ fun DetailField(
                 Text(
                     text = displayValue,
                     style = MaterialTheme.typography.bodyLarge,
-                    color = if (isMissing) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface
+                    color = if (isMissing) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                    maxLines = maxLines,
+                    overflow = overflow
                 )
             }
         }

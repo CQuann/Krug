@@ -4,14 +4,13 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.model.DataResult
+import com.example.krug.data.model.RequestState
 import com.example.krug.data.model.event.Event
 import com.example.krug.data.repository.EventRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import javax.inject.Inject
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
+import javax.inject.Inject
 
 @HiltViewModel
 class EventViewModel @Inject constructor(
@@ -21,32 +20,33 @@ class EventViewModel @Inject constructor(
 
     private val eventId: String = savedStateHandle.get<String>("eventId") ?: ""
 
+    // Данные события (только базовые, без деталей)
     private val _event = MutableStateFlow<Event?>(null)
     val event: StateFlow<Event?> = _event.asStateFlow()
 
-    private val _uiState = MutableStateFlow<EventUiState>(EventUiState.Loading)
-    val uiState: StateFlow<EventUiState> = _uiState.asStateFlow()
+    // Состояние экрана (загрузка, ошибка)
+    private val _requestState = MutableStateFlow<RequestState>(RequestState.Loading)
+    val requestState: StateFlow<RequestState> = _requestState.asStateFlow()
+
+    // Сообщения для снекбара
+    private val _snackbarEvents = MutableSharedFlow<String>()
+    val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
 
     init { loadEvent() }
 
     fun loadEvent() {
         viewModelScope.launch {
-            _uiState.value = EventUiState.Loading
+            _requestState.value = RequestState.Loading
             when (val result = eventRepository.getEvent(eventId)) {
                 is DataResult.Success -> {
-                    _event.value = result.data
-                    _uiState.value = EventUiState.Success
+                    _event.value = result.data.event
+                    _requestState.value = RequestState.Idle
                 }
                 is DataResult.Error -> {
-                    _uiState.value = EventUiState.Error(result.message)
+                    _requestState.value = RequestState.Error(result.message)
+                    _snackbarEvents.emit(result.message)
                 }
             }
         }
     }
-}
-
-sealed class EventUiState {
-    object Loading : EventUiState()
-    object Success : EventUiState()
-    data class Error(val message: String) : EventUiState()
 }

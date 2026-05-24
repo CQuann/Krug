@@ -6,7 +6,7 @@ data class PlanningModulesResponse(
 
 data class PlanningModule(
     val id: String,
-    val type: String,        // "poll", "item_list", "task_list"
+    val type: String, // "poll", "item_list", "task_list"
     val title: String,
     val data: ModuleData?
 )
@@ -17,7 +17,7 @@ data class PollData(
     val options: List<String>,
     val multiple_choice: Boolean,
     val votes: List<Vote>? = null,
-    val votes_count: List<Int>? = null,
+    val votes_count: List<Int>? = null, // [2, 4, 0]
     val own_vote: List<Int> = emptyList()
 ) : ModuleData()
 

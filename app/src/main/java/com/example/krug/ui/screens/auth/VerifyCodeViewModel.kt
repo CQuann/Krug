@@ -4,70 +4,107 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
+import com.example.krug.data.model.RequestState
 import com.example.krug.data.model.auth.VerifyResult
 import com.example.krug.data.repository.AuthRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
 @HiltViewModel
 class VerifyCodeViewModel @Inject constructor(
     private val authRepository: AuthRepository,
-    private val sessionManager: SessionManager,
+    private val sessionManager: SessionManager
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow<VerifyCodeUiState>(VerifyCodeUiState.Idle)
-    val uiState: StateFlow<VerifyCodeUiState> = _uiState.asStateFlow()
+    // Состояние экрана (загрузка, ошибка)
+    private val _requestState = MutableStateFlow<RequestState>(RequestState.Idle)
+    val requestState: StateFlow<RequestState> = _requestState.asStateFlow()
 
-    private val _navigationEvent =
-        MutableSharedFlow<VerifyNavigation>(
-            replay = 0,
-            extraBufferCapacity = 1
-        )
-    val navigationEvent = _navigationEvent.asSharedFlow()
+    // Навигационные события
+    private val _navigationEvents = MutableSharedFlow<VerifyNavigation>()
+    val navigationEvents: SharedFlow<VerifyNavigation> = _navigationEvents.asSharedFlow()
+
+    // Снекбар
+    private val _snackbarEvents = MutableSharedFlow<String>()
+    val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
+
+    // Таймер обратного отсчёта (30 секунд)
+    private val _canResend = MutableStateFlow(false)
+    val canResend: StateFlow<Boolean> = _canResend.asStateFlow()
+
+    private val _resendCooldown = MutableStateFlow(30)
+    val resendCooldown: StateFlow<Int> = _resendCooldown.asStateFlow()
+
+    private var timerJob: Job? = null
+
+    init {
+        startCooldown()
+    }
+
+    private fun startCooldown() {
+        _canResend.value = false
+        _resendCooldown.value = 30
+        timerJob?.cancel()
+        timerJob = viewModelScope.launch {
+            for (i in 30 downTo 0) {
+                _resendCooldown.value = i
+                delay(1000L)
+            }
+            _canResend.value = true
+        }
+    }
+
+    fun resendCode(email: String) {
+        if (!_canResend.value) return
+        viewModelScope.launch {
+            _requestState.value = RequestState.Loading
+            // Используем обычный requestCode вместо resend_code
+            when (val result = authRepository.requestCode(email)) {
+                is DataResult.Success -> {
+                    _requestState.value = RequestState.Idle
+                    _snackbarEvents.emit("Код отправлен повторно")
+                    startCooldown()   // перезапускаем таймер
+                }
+                is DataResult.Error -> {
+                    _requestState.value = RequestState.Error(result.message)
+                }
+            }
+        }
+    }
 
     fun verifyCode(email: String, code: String) {
         viewModelScope.launch {
-            _uiState.value = VerifyCodeUiState.Loading
+            _requestState.value = RequestState.Loading
             when (val result = authRepository.verifyCode(email, code)) {
                 is DataResult.Success -> {
-                    _uiState.value = VerifyCodeUiState.Idle
+                    _requestState.value = RequestState.Idle
                     when (val verifyResult = result.data) {
                         is VerifyResult.LoginSuccess -> {
                             sessionManager.saveToken(verifyResult.token)
                             sessionManager.saveUserId(verifyResult.userId)
-                            _navigationEvent.emit(VerifyNavigation.GoToMain)
+                            _navigationEvents.emit(VerifyNavigation.GoToMain)
                         }
-
                         is VerifyResult.RegisterNeeded -> {
-                            _navigationEvent.emit(VerifyNavigation.GoToRegister(email))
+                            _navigationEvents.emit(VerifyNavigation.GoToRegister(email))
                         }
                     }
                 }
-
                 is DataResult.Error -> {
-                    _uiState.value = VerifyCodeUiState.Error(result.message)
+                    _requestState.value = RequestState.Error(result.message)
                 }
             }
         }
     }
 
     fun resetError() {
-        if (_uiState.value is VerifyCodeUiState.Error) {
-            _uiState.value = VerifyCodeUiState.Idle
+        if (_requestState.value is RequestState.Error) {
+            _requestState.value = RequestState.Idle
         }
     }
-}
-
-sealed class VerifyCodeUiState {
-    object Idle : VerifyCodeUiState()
-    object Loading : VerifyCodeUiState()
-    data class Error(val message: String) : VerifyCodeUiState()
 }
 
 sealed class VerifyNavigation {

@@ -1,79 +1,102 @@
 package com.example.krug.ui.screens.event.createEvent
 
 import android.net.Uri
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
-import androidx.compose.material3.Button
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.runtime.Composable
+import androidx.compose.foundation.layout.*
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
+import com.example.krug.data.model.RequestState
 import com.example.krug.ui.components.AvatarPicker
 import com.example.krug.ui.theme.KrugTheme
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 
 @Composable
 fun EventAvatarUploadScreen(
-    uiState: EventAvatarUploadUiState,
+    requestState: RequestState,
     avatarUri: Uri?,
+    snackbarEvents: SharedFlow<String>,
     onSetAvatarUri: (Uri) -> Unit,
     onUploadAvatar: () -> Unit,
     onSkip: () -> Unit
 ) {
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .padding(16.dp),
-        horizontalAlignment = Alignment.CenterHorizontally,
-        verticalArrangement = Arrangement.Center
-    ) {
-        AvatarPicker(
-            currentAvatarUri = avatarUri,
-            onAvatarUriChanged = onSetAvatarUri
-        )
-        Spacer(modifier = Modifier.height(24.dp))
+    val snackbarHostState = remember { SnackbarHostState() }
 
-        Button(
-            onClick = onUploadAvatar,
-            enabled = avatarUri != null && uiState !is EventAvatarUploadUiState.Loading,
-            modifier = Modifier.fillMaxWidth()
+    LaunchedEffect(Unit) {
+        snackbarEvents.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) }
+    ) { padding ->
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(padding)
+                .padding(horizontal = 24.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
-            if (uiState is EventAvatarUploadUiState.Loading) {
-                CircularProgressIndicator(modifier = Modifier.size(24.dp))
-            } else {
-                Text("Загрузить")
+            Text(
+                "Добавьте фото события",
+                style = MaterialTheme.typography.headlineSmall,
+                textAlign = TextAlign.Center
+            )
+            Spacer(Modifier.height(32.dp))
+
+            AvatarPicker(
+                currentAvatarUri = avatarUri,
+                onAvatarUriChanged = onSetAvatarUri
+            )
+
+            Spacer(Modifier.height(32.dp))
+
+            Button(
+                onClick = onUploadAvatar,
+                enabled = avatarUri != null && requestState !is RequestState.Loading,
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                if (requestState is RequestState.Loading) {
+                    CircularProgressIndicator(modifier = Modifier.size(20.dp), strokeWidth = 2.dp)
+                } else {
+                    Text("Загрузить")
+                }
             }
-        }
 
-        TextButton(onClick = onSkip) {
-            Text("Пропустить")
-        }
+            Spacer(Modifier.height(12.dp))
 
-        if (uiState is EventAvatarUploadUiState.Error) {
-            Spacer(modifier = Modifier.height(8.dp))
-            Text(text = uiState.message, color = MaterialTheme.colorScheme.error)
+            TextButton(onClick = onSkip) {
+                Text("Пропустить")
+            }
+
+            if (requestState is RequestState.Error) {
+                Spacer(Modifier.height(16.dp))
+                Text(
+                    text = (requestState as RequestState.Error).message,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodyMedium
+                )
+            }
         }
     }
 }
+
+// ------------ Preview ------------
 
 @Preview(showBackground = true, name = "EventAvatarUpload – пусто")
 @Composable
 fun EventAvatarUploadScreenPreviewEmpty() {
     KrugTheme {
         EventAvatarUploadScreen(
-            uiState = EventAvatarUploadUiState.Idle,
+            requestState = RequestState.Idle,
             avatarUri = null,
+            snackbarEvents = MutableSharedFlow(),
             onSetAvatarUri = {},
             onUploadAvatar = {},
             onSkip = {}
@@ -86,8 +109,9 @@ fun EventAvatarUploadScreenPreviewEmpty() {
 fun EventAvatarUploadScreenPreviewLoading() {
     KrugTheme {
         EventAvatarUploadScreen(
-            uiState = EventAvatarUploadUiState.Loading,
-            avatarUri = "android.resource://com.example.krug/drawable/ic_launcher_foreground".toUri(),
+            requestState = RequestState.Loading,
+            avatarUri = null,
+            snackbarEvents = MutableSharedFlow(),
             onSetAvatarUri = {},
             onUploadAvatar = {},
             onSkip = {}
@@ -100,8 +124,9 @@ fun EventAvatarUploadScreenPreviewLoading() {
 fun EventAvatarUploadScreenPreviewError() {
     KrugTheme {
         EventAvatarUploadScreen(
-            uiState = EventAvatarUploadUiState.Error("Не удалось загрузить изображение"),
+            requestState = RequestState.Error("Не удалось загрузить изображение"),
             avatarUri = null,
+            snackbarEvents = MutableSharedFlow(),
             onSetAvatarUri = {},
             onUploadAvatar = {},
             onSkip = {}

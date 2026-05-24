@@ -8,12 +8,7 @@ import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.planning.PlanningModule
 import com.example.krug.data.repository.PlanningRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.flow.MutableSharedFlow
-import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.SharedFlow
-import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.asSharedFlow
-import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.*
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -28,8 +23,9 @@ class EventPlanningViewModel @Inject constructor(
 
     fun getEventId(): String = eventId
 
-    private val _errorMessage = MutableSharedFlow<String>()
-    val errorMessage: SharedFlow<String> = _errorMessage.asSharedFlow()
+    // Общий снекбар для ошибок
+    private val _snackbarEvents = MutableSharedFlow<String>()
+    val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
 
     sealed class PlanningUiState {
         object Loading : PlanningUiState()
@@ -48,7 +44,6 @@ class EventPlanningViewModel @Inject constructor(
     private val _creationMode = MutableStateFlow<CreationMode>(CreationMode.None)
     val creationMode: StateFlow<CreationMode> = _creationMode.asStateFlow()
 
-    // Показ диалога выбора типа
     private val _showTypeDialog = MutableStateFlow(false)
     val showTypeDialog: StateFlow<Boolean> = _showTypeDialog.asStateFlow()
 
@@ -59,7 +54,10 @@ class EventPlanningViewModel @Inject constructor(
             _uiState.value = PlanningUiState.Loading
             when (val result = planningRepository.getPlanningModules(eventId)) {
                 is DataResult.Success -> _uiState.value = PlanningUiState.Content(result.data.modules)
-                is DataResult.Error -> _uiState.value = PlanningUiState.Error(result.message)
+                is DataResult.Error -> {
+                    _uiState.value = PlanningUiState.Error(result.message)
+                    _snackbarEvents.emit(result.message)
+                }
             }
         }
     }
@@ -82,14 +80,14 @@ class EventPlanningViewModel @Inject constructor(
 
     fun onCreationFinished() {
         _creationMode.value = CreationMode.None
-        loadModules() // обновить список после создания
+        loadModules()
     }
 
     fun votePoll(pollId: String, optionIndexes: List<Int>) {
         viewModelScope.launch {
             when (val result = planningRepository.votePoll(eventId, pollId, optionIndexes)) {
                 is DataResult.Success -> loadModules()
-                is DataResult.Error -> _errorMessage.emit(result.message)
+                is DataResult.Error -> _snackbarEvents.emit(result.message)
             }
         }
     }
@@ -98,7 +96,7 @@ class EventPlanningViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = planningRepository.assignItem(eventId, type, moduleId, itemId, assign)) {
                 is DataResult.Success -> loadModules()
-                is DataResult.Error -> _errorMessage.emit(result.message)
+                is DataResult.Error -> _snackbarEvents.emit(result.message)
             }
         }
     }
@@ -107,9 +105,10 @@ class EventPlanningViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = planningRepository.completeTask(eventId, moduleId, itemId, completed)) {
                 is DataResult.Success -> loadModules()
-                is DataResult.Error -> _errorMessage.emit(result.message)
+                is DataResult.Error -> _snackbarEvents.emit(result.message)
             }
         }
     }
+
     fun getCurrentUserId(): String? = sessionManager.cachedUserId
 }

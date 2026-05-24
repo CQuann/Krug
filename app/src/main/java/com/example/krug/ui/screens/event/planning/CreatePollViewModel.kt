@@ -1,4 +1,3 @@
-// ui/screens/event/planning/CreatePollViewModel.kt
 package com.example.krug.ui.screens.event.planning
 
 import androidx.lifecycle.ViewModel
@@ -38,9 +37,13 @@ class CreatePollViewModel @Inject constructor(
     private val _requestState = MutableStateFlow<RequestState>(RequestState.Idle)
     val requestState: StateFlow<RequestState> = _requestState.asStateFlow()
 
-    // Событие успешного создания
-    private val _createdEvent = MutableSharedFlow<Unit>()
-    val createdEvent: SharedFlow<Unit> = _createdEvent.asSharedFlow()
+    // Снекбар
+    private val _snackbarEvents = MutableSharedFlow<String>()
+    val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
+
+    // Навигация (успешное создание)
+    private val _navigationEvents = MutableSharedFlow<Unit>()
+    val navigationEvents: SharedFlow<Unit> = _navigationEvents.asSharedFlow()
 
     fun updateTitle(value: String) {
         _title.value = value
@@ -52,6 +55,7 @@ class CreatePollViewModel @Inject constructor(
         if (index in list.indices) {
             list[index] = value
             _options.value = list
+            // снимаем ошибку для этого поля
             val errors = _optionErrors.value.toMutableMap()
             errors.remove(index)
             _optionErrors.value = errors
@@ -67,6 +71,7 @@ class CreatePollViewModel @Inject constructor(
         if (list.size > 2 && index in list.indices) {
             list.removeAt(index)
             _options.value = list
+            // перестраиваем ошибки, т.к. индексы сместились
             val errors = _optionErrors.value.toMutableMap()
             errors.remove(index)
             val updated = mutableMapOf<Int, String>()
@@ -94,11 +99,12 @@ class CreatePollViewModel @Inject constructor(
             _requestState.value = RequestState.Loading
             when (val result = planningRepository.createPoll(eventId, request)) {
                 is DataResult.Success -> {
-                    _requestState.value = RequestState.Success
-                    _createdEvent.emit(Unit)
+                    _snackbarEvents.emit("Опрос создан")
+                    _navigationEvents.emit(Unit) // сигнал закрыть экран создания
                 }
                 is DataResult.Error -> {
                     _requestState.value = RequestState.Error(result.message)
+                    _snackbarEvents.emit(result.message)
                 }
             }
         }

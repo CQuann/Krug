@@ -1,8 +1,8 @@
 package com.example.krug.data.repository
 
 import android.net.Uri
-import com.example.krug.data.model.event.*
 import com.example.krug.data.model.DataResult
+import com.example.krug.data.model.event.*
 
 interface EventRepository {
     suspend fun createEvent(request: CreateEventRequest): DataResult<Event>
@@ -14,4 +14,5 @@ interface EventRepository {
     suspend fun uploadEventAvatar(eventId: String, uri: Uri): DataResult<Unit>
     suspend fun removeMember(eventId: String, userId: String): DataResult<Unit>
     suspend fun updateMemberPermissions(eventId: String, userId: String, permissions: String): DataResult<Unit>
+    suspend fun joinEvent(inviteToken: String): DataResult<Unit>
 }

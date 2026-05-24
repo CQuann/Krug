@@ -6,36 +6,49 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.Chat
-import androidx.compose.material.icons.filled.PhotoLibrary
+import androidx.compose.material.icons.filled.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.navigation.compose.hiltViewModel
+import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.krug.R
+import com.example.krug.data.model.RequestState
 import com.example.krug.data.model.event.Event
 import com.example.krug.ui.screens.event.planning.EventPlanningScreen
 import com.example.krug.ui.screens.event.planning.EventPlanningViewModel
 import com.example.krug.ui.theme.KrugTheme
 import com.example.krug.utils.Constants
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventScreen(
     event: Event?,
-    uiState: EventUiState,
+    requestState: RequestState,
+    snackbarEvents: SharedFlow<String>,
     onHeaderClick: () -> Unit,
     onBackClick: () -> Unit
 ) {
+    val snackbarHostState = remember { SnackbarHostState() }
+
+    LaunchedEffect(Unit) {
+        snackbarEvents.collect { message ->
+            snackbarHostState.showSnackbar(message)
+        }
+    }
+
     Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
                 title = {
@@ -44,7 +57,7 @@ fun EventScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Box(modifier = Modifier.size(36.dp)) {
-                            val avatarUrl = event?.let { "${Constants.BASE_URL}/event-avatars/${it.id}" }
+                            val avatarUrl = event?.let { "${Constants.BASE_URL}/event-avatars/${it.eventId}" }
                             AsyncImage(
                                 model = avatarUrl,
                                 contentDescription = null,
@@ -69,15 +82,17 @@ fun EventScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
-            when (uiState) {
-                EventUiState.Loading -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    CircularProgressIndicator()
-                }
-                is EventUiState.Error -> Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                    Text("Ошибка: ${uiState.message}", color = MaterialTheme.colorScheme.error)
-                }
-                EventUiState.Success -> {
-                    var selectedTab by remember { mutableIntStateOf(1) } // 1 = Планирование
+            when (requestState) {
+                RequestState.Loading -> Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) { CircularProgressIndicator() }
+                is RequestState.Error -> Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) { Text("Ошибка: ${requestState.message}", color = MaterialTheme.colorScheme.error) }
+                RequestState.Idle, RequestState.Success -> {
+                    var selectedTab by remember { mutableIntStateOf(1) }
                     val tabs = listOf("Чат", "Планирование", "Альбом")
 
                     SecondaryTabRow(selectedTabIndex = selectedTab) {
@@ -91,24 +106,7 @@ fun EventScreen(
                     }
 
                     when (selectedTab) {
-                        0 -> Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(
-                                Icons.Filled.Chat,
-                                contentDescription = null,
-                                modifier = Modifier.size(64.dp),
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                            Spacer(Modifier.height(16.dp))
-                            Text(
-                                "Чат появится позже",
-                                style = MaterialTheme.typography.bodyLarge,
-                                color = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
+                        0 -> EmptyTabPlaceholder("Чат", Icons.AutoMirrored.Filled.Chat)
                         1 -> {
                             val planningViewModel: EventPlanningViewModel = hiltViewModel()
                             val planningUiState by planningViewModel.uiState.collectAsStateWithLifecycle()
@@ -122,19 +120,33 @@ fun EventScreen(
                                 showTypeDialog = showTypeDialog
                             )
                         }
-                        2 -> Column(
-                            modifier = Modifier.fillMaxSize(),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Icon(Icons.Default.PhotoLibrary, contentDescription = null, modifier = Modifier.size(64.dp), tint = MaterialTheme.colorScheme.onSurfaceVariant)
-                            Spacer(Modifier.height(16.dp))
-                            Text("Альбом появится позже", style = MaterialTheme.typography.bodyLarge, color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        }
+                        2 -> EmptyTabPlaceholder("Альбом", Icons.Default.PhotoLibrary)
                     }
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun EmptyTabPlaceholder(text: String, icon: ImageVector) {
+    Column(
+        modifier = Modifier.fillMaxSize(),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.Center
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(64.dp),
+            tint = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        Spacer(Modifier.height(16.dp))
+        Text(
+            text = "$text появится позже",
+            style = MaterialTheme.typography.bodyLarge,
+            color = MaterialTheme.colorScheme.onSurfaceVariant
+        )
     }
 }
 
@@ -144,7 +156,7 @@ fun EventScreenPreview() {
     KrugTheme {
         EventScreen(
             event = Event(
-                id = "1",
+                eventId = "1",
                 title = "Пикник",
                 color = "#FF5733",
                 status = "active",
@@ -153,7 +165,8 @@ fun EventScreenPreview() {
                 startDateTime = "2026-05-10T15:00Z",
                 endDateTime = "2026-05-10T18:00Z"
             ),
-            uiState = EventUiState.Success,
+            requestState = RequestState.Idle,
+            snackbarEvents = MutableSharedFlow(),
             onHeaderClick = {},
             onBackClick = {}
         )

@@ -5,7 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
-import com.example.krug.data.model.UserData
+import com.example.krug.data.model.auth.UserData
 import com.example.krug.data.model.event.Event
 import com.example.krug.data.repository.AuthRepository
 import com.example.krug.data.repository.EventRepository
@@ -26,9 +26,6 @@ class MainAppViewModel @Inject constructor(
     // Данные пользователя
     private val _userId = MutableStateFlow<String?>(null)
     val userId: StateFlow<String?> = _userId.asStateFlow()
-
-    private val _userData = MutableStateFlow<UserData?>(null)
-    val userData: StateFlow<UserData?> = _userData.asStateFlow()
 
     // События
     private val _events = MutableStateFlow<List<Event>>(emptyList())
@@ -56,7 +53,6 @@ class MainAppViewModel @Inject constructor(
         viewModelScope.launch {
             _userId.value = sessionManager.getUserId()
             Log.d("User id", _userId.value.toString())
-            loadUserData()
             loadEvents(reset = true)
         }
     }
@@ -101,15 +97,6 @@ class MainAppViewModel @Inject constructor(
         if (_isLoadingMore.value || _isRefreshing.value) return
         if (eventsOffset >= _totalEvents.value) return // всё загружено
         loadEvents(reset = false)
-    }
-
-    fun loadUserData() {
-        viewModelScope.launch {
-            when (val result = authRepository.getUserData()) {
-                is DataResult.Success -> _userData.value = result.data
-                is DataResult.Error -> _error.value = result.message
-            }
-        }
     }
 
     fun onRefresh() {

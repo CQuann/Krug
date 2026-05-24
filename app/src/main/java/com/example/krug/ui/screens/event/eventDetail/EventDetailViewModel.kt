@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
+import com.example.krug.data.model.RequestState
 import com.example.krug.data.model.event.DetailedEvent
 import com.example.krug.data.model.event.Member
 import com.example.krug.data.repository.EventRepository
@@ -25,8 +26,8 @@ class EventDetailViewModel @Inject constructor(
     private val _detailedEvent = MutableStateFlow<DetailedEvent?>(null)
     val detailedEvent: StateFlow<DetailedEvent?> = _detailedEvent.asStateFlow()
 
-    private val _uiState = MutableStateFlow<EventDetailUiState>(EventDetailUiState.Loading)
-    val uiState: StateFlow<EventDetailUiState> = _uiState.asStateFlow()
+    private val _requestState = MutableStateFlow<RequestState>(RequestState.Loading)
+    val requestState: StateFlow<RequestState> = _requestState.asStateFlow()
 
     private val _showArchiveDialog = MutableStateFlow(false)
     val showArchiveDialog: StateFlow<Boolean> = _showArchiveDialog.asStateFlow()
@@ -49,31 +50,35 @@ class EventDetailViewModel @Inject constructor(
     private val _navigationEvents = MutableSharedFlow<DetailNavigationEvent>()
     val navigationEvents: SharedFlow<DetailNavigationEvent> = _navigationEvents.asSharedFlow()
 
+    private val _snackbarEvents = MutableSharedFlow<String>()
+    val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
+
     init { loadEvent() }
 
     fun loadEvent() {
         viewModelScope.launch {
-            _uiState.value = EventDetailUiState.Loading
+            _requestState.value = RequestState.Loading
             when (val result = eventRepository.getEvent(eventId)) {
                 is DataResult.Success -> {
                     val detailed = result.data
                     _detailedEvent.value = detailed
-                    val perms = detailed.permissions
-                    val isCreator = perms.length > 0 && perms[0] == '1'
-                    val isAdmin = perms.length > 1 && perms[1] == '1'
-
-                    _canEdit.value = isCreator || isAdmin
-                    _canUploadAvatar.value = _canEdit.value
-                    _canArchive.value = isCreator || isAdmin
-                    _canDelete.value = isCreator
-                    _canManageMembers.value = isCreator || isAdmin
-                    _canToggleAdmin.value = isCreator
-
-                    _uiState.value = EventDetailUiState.Success
+                    applyPermissions(detailed.permissions)
+                    _requestState.value = RequestState.Idle
                 }
-                is DataResult.Error -> _uiState.value = EventDetailUiState.Error(result.message)
+                is DataResult.Error -> _requestState.value = RequestState.Error(result.message)
             }
         }
+    }
+
+    private fun applyPermissions(perms: String) {
+        val isCreator = perms.length > 0 && perms[0] == '1'
+        val isAdmin   = perms.length > 1 && perms[1] == '1'
+        _canEdit.value = isCreator || isAdmin
+        _canUploadAvatar.value = _canEdit.value
+        _canArchive.value = isCreator || isAdmin
+        _canDelete.value = isCreator
+        _canManageMembers.value = isCreator || isAdmin
+        _canToggleAdmin.value = isCreator
     }
 
     fun getCurrentUserId(): String? = sessionManager.cachedUserId
@@ -90,13 +95,16 @@ class EventDetailViewModel @Inject constructor(
     fun onConfirmArchive() {
         _showArchiveDialog.value = false
         viewModelScope.launch {
-            _uiState.value = EventDetailUiState.Loading
+            _requestState.value = RequestState.Loading
             when (val result = eventRepository.updateEventStatus(eventId, "archived")) {
                 is DataResult.Success -> {
-                    _navigationEvents.emit(DetailNavigationEvent.ShowMessage("Событие архивировано"))
+                    _snackbarEvents.emit("Событие архивировано")
                     _navigationEvents.emit(DetailNavigationEvent.GoBack)
                 }
-                is DataResult.Error -> _navigationEvents.emit(DetailNavigationEvent.ShowMessage(result.message))
+                is DataResult.Error -> {
+                    _snackbarEvents.emit(result.message)
+                    _requestState.value = RequestState.Idle
+                }
             }
         }
     }
@@ -108,22 +116,22 @@ class EventDetailViewModel @Inject constructor(
         viewModelScope.launch {
             when (val result = eventRepository.deleteEvent(eventId)) {
                 is DataResult.Success -> {
-                    _navigationEvents.emit(DetailNavigationEvent.ShowMessage("Событие удалено"))
+                    _snackbarEvents.emit("Событие удалено")
                     _navigationEvents.emit(DetailNavigationEvent.GoBack)
                 }
-                is DataResult.Error -> _navigationEvents.emit(DetailNavigationEvent.ShowMessage(result.message))
+                is DataResult.Error -> _snackbarEvents.emit(result.message)
             }
         }
     }
 
     fun removeMember(userId: String) {
         viewModelScope.launch {
-            _uiState.value = EventDetailUiState.Loading
+            _requestState.value = RequestState.Loading
             when (val result = eventRepository.removeMember(eventId, userId)) {
                 is DataResult.Success -> loadEvent()
                 is DataResult.Error -> {
-                    _navigationEvents.emit(DetailNavigationEvent.ShowMessage(result.message))
-                    _uiState.value = EventDetailUiState.Success
+                    _snackbarEvents.emit(result.message)
+                    _requestState.value = RequestState.Idle
                 }
             }
         }
@@ -131,41 +139,28 @@ class EventDetailViewModel @Inject constructor(
 
     fun toggleAdmin(member: Member) {
         if (!_canToggleAdmin.value) {
-            viewModelScope.launch { _navigationEvents.emit(DetailNavigationEvent.ShowMessage("Недостаточно прав")) }
+            viewModelScope.launch { _snackbarEvents.emit("Недостаточно прав") }
             return
         }
         viewModelScope.launch {
-            _uiState.value = EventDetailUiState.Loading
-            val perms = member.permissions ?: "00"
-            val newPerms = StringBuilder(perms.ensureLength(2))
+            _requestState.value = RequestState.Loading
+            val perms = member.permissions ?: "000"
+            val newPerms = StringBuilder(perms.padEnd(3, '0'))
             val isAdmin = newPerms[1] == '1'
             newPerms.setCharAt(1, if (isAdmin) '0' else '1')
-            when (val result = eventRepository.updateMemberPermissions(eventId, member.user_id, newPerms.toString())) {
+            when (val result = eventRepository.updateMemberPermissions(eventId, member.userId, newPerms.toString())) {
                 is DataResult.Success -> loadEvent()
                 is DataResult.Error -> {
-                    _navigationEvents.emit(DetailNavigationEvent.ShowMessage(result.message))
-                    _uiState.value = EventDetailUiState.Success
+                    _snackbarEvents.emit(result.message)
+                    _requestState.value = RequestState.Idle
                 }
             }
         }
     }
 
-    private fun String.ensureLength(length: Int): String {
-        var s = this
-        while (s.length < length) s += '0'
-        return s
+    sealed class DetailNavigationEvent {
+        data class EditEvent(val eventId: String) : DetailNavigationEvent()
+        data class UploadAvatar(val eventId: String) : DetailNavigationEvent()
+        object GoBack : DetailNavigationEvent()
     }
-}
-
-sealed class EventDetailUiState {
-    object Loading : EventDetailUiState()
-    object Success : EventDetailUiState()
-    data class Error(val message: String) : EventDetailUiState()
-}
-
-sealed class DetailNavigationEvent {
-    data class EditEvent(val eventId: String) : DetailNavigationEvent()
-    data class UploadAvatar(val eventId: String) : DetailNavigationEvent()
-    data class ShowMessage(val text: String) : DetailNavigationEvent()
-    object GoBack : DetailNavigationEvent()
 }

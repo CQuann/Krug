@@ -22,7 +22,6 @@ import java.time.LocalTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
-// ui/components/DateTimePickerField.kt
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun DateTimePickerField(
@@ -32,6 +31,7 @@ fun DateTimePickerField(
     onDateSelected: (LocalDate?) -> Unit,
     onTimeSelected: (LocalTime?) -> Unit,
     enableTime: Boolean = false,
+    enabled: Boolean = true,
     modifier: Modifier = Modifier
 ) {
     var showDatePicker by remember { mutableStateOf(false) }
@@ -44,42 +44,48 @@ fun DateTimePickerField(
     val timeText = time?.format(timeFormatter) ?: "Не выбрано"
 
     Column(modifier = modifier) {
-        // Общая подпись
-        if (label != "") {
+        if (label.isNotEmpty()) {
             Text(
                 text = label,
                 style = MaterialTheme.typography.labelMedium,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
+                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
                 modifier = Modifier.padding(bottom = 4.dp)
             )
         }
 
-        // Контейнер с общей границей
         Surface(
             shape = MaterialTheme.shapes.extraSmall,
-            border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline),
+            border = BorderStroke(1.dp, if (enabled) MaterialTheme.colorScheme.outline
+            else MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)),
             color = MaterialTheme.colorScheme.surface,
             modifier = Modifier.fillMaxWidth()
         ) {
-            Column (horizontalAlignment = Alignment.CenterHorizontally){
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 // Строка даты
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()
-                        .clickable { showDatePicker = true }
+                        .then(
+                            if (enabled) Modifier.clickable { showDatePicker = true }
+                            else Modifier
+                        )
                         .padding(horizontal = 12.dp, vertical = 14.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     Text(
                         text = dateText,
-                        color = if (date == null) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                        color = if (!enabled) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                        else if (date == null) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                        else MaterialTheme.colorScheme.onSurface,
                         style = MaterialTheme.typography.bodyLarge,
                         modifier = Modifier.weight(1f)
                     )
                     Icon(
                         imageVector = Icons.Default.DateRange,
                         contentDescription = "Выбрать дату",
-                        tint = MaterialTheme.colorScheme.primary
+                        tint = if (enabled) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
                     )
                 }
 
@@ -96,27 +102,30 @@ fun DateTimePickerField(
 
                 // Строка времени
                 if (enableTime) {
-                    val timeEnabled = date != null
+                    val timeEnabled = date != null && enabled
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
                             .then(
                                 if (timeEnabled) Modifier.clickable { showTimePicker = true }
-                                else Modifier.alpha(0.4f)
+                                else Modifier.alpha(if (enabled) 0.4f else 0.38f)
                             )
                             .padding(horizontal = 12.dp, vertical = 14.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
                             text = timeText,
-                            color = if (time == null) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f) else MaterialTheme.colorScheme.onSurface,
+                            color = if (!enabled) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.38f)
+                            else if (time == null) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
+                            else MaterialTheme.colorScheme.onSurface,
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.weight(1f)
                         )
                         Icon(
                             imageVector = Icons.Default.Schedule,
                             contentDescription = "Выбрать время",
-                            tint = if (timeEnabled) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.outline
+                            tint = if (timeEnabled) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.outline.copy(alpha = 0.38f)
                         )
                     }
                 }
@@ -124,8 +133,8 @@ fun DateTimePickerField(
         }
     }
 
-    // DatePickerDialog
-    if (showDatePicker) {
+    // DatePickerDialog – открывается только если enabled
+    if (showDatePicker && enabled) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = date?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
         )
@@ -148,8 +157,8 @@ fun DateTimePickerField(
         }
     }
 
-    // TimePickerDialog
-    if (showTimePicker && enableTime) {
+    // TimePickerDialog – открывается только если enabled
+    if (showTimePicker && enableTime && enabled) {
         val timePickerState = rememberTimePickerState(
             initialHour = time?.hour ?: 0,
             initialMinute = time?.minute ?: 0,
@@ -173,6 +182,7 @@ fun DateTimePickerField(
     }
 }
 
+
 @Preview(showBackground = true, name = "DateTime – только дата (пусто)")
 @Composable
 fun DateTimeOnlyEmptyPreview() {
@@ -194,7 +204,8 @@ fun DateTimeOnlySelectedPreview() {
             label = "Дата",
             date = LocalDate.of(2026, 5, 15), time = null,
             onDateSelected = {}, onTimeSelected = {},
-            enableTime = false
+            enableTime = false,
+
         )
     }
 }
@@ -207,7 +218,8 @@ fun DateTimeWithTimeBlockedPreview() {
             label = "Начало",
             date = null, time = null,
             onDateSelected = {}, onTimeSelected = {},
-            enableTime = true
+            enableTime = true,
+            enabled = false
         )
     }
 }
@@ -220,7 +232,8 @@ fun DateTimeWithTimeActivePreview() {
             label = "Окончание",
             date = LocalDate.now(), time = LocalTime.of(18, 0),
             onDateSelected = {}, onTimeSelected = {},
-            enableTime = true
+            enableTime = true,
+
         )
     }
 }

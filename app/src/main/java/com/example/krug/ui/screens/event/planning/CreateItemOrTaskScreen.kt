@@ -77,7 +77,6 @@ fun CreateItemOrTaskScreen(
 
             Spacer(Modifier.height(8.dp))
 
-            // Кнопка добавления пункта
             Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                 FloatingActionButton(
                     onClick = onAddItem,
@@ -94,7 +93,6 @@ fun CreateItemOrTaskScreen(
             }
         }
 
-        // Низ с кнопками
         Surface(tonalElevation = 8.dp) {
             Row(
                 modifier = Modifier

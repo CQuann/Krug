@@ -1,11 +1,8 @@
 package com.example.krug.data.network
 
+import com.example.krug.data.model.ApiResponse
 import com.example.krug.data.model.planning.*
-import retrofit2.Response
-import retrofit2.http.Body
-import retrofit2.http.GET
-import retrofit2.http.POST
-import retrofit2.http.Path
+import retrofit2.http.*
 
 interface PlanningApi {
 
@@ -18,19 +15,19 @@ interface PlanningApi {
     suspend fun createPoll(
         @Path("eventId") eventId: String,
         @Body request: CreatePollRequest
-    ): Response<Unit>
+    ): ApiResponse
 
     @POST("events/{eventId}/planning/items")
     suspend fun createItemList(
         @Path("eventId") eventId: String,
         @Body request: CreateItemListRequest
-    ): Response<Unit>
+    ): ApiResponse
 
     @POST("events/{eventId}/planning/tasks")
     suspend fun createTaskList(
         @Path("eventId") eventId: String,
         @Body request: CreateTaskListRequest
-    ): Response<Unit>
+    ): ApiResponse
 
     // Голосование в опросе
     @POST("events/{eventId}/planning/poll/{pollId}/vote")
@@ -38,7 +35,7 @@ interface PlanningApi {
         @Path("eventId") eventId: String,
         @Path("pollId") pollId: String,
         @Body request: VoteRequest
-    ): Response<PlanningModule>
+    ): ApiResponse
 
     // Бронирование / отказ от бронирования (вещи и задачи)
     @POST("events/{eventId}/planning/{type}/{moduleId}/items/{itemId}/assign")
@@ -48,7 +45,7 @@ interface PlanningApi {
         @Path("moduleId") moduleId: String,
         @Path("itemId") itemId: String,
         @Body request: AssignRequest
-    ): Response<PlanningModule>
+    ): ApiResponse
 
     // Отметка о выполнении задачи
     @POST("events/{eventId}/planning/tasks/{moduleId}/items/{itemId}/complete")
@@ -57,5 +54,5 @@ interface PlanningApi {
         @Path("moduleId") moduleId: String,
         @Path("itemId") itemId: String,
         @Body request: CompleteRequest
-    ): Response<PlanningModule>
+    ): ApiResponse
 }

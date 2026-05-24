@@ -23,6 +23,7 @@ class EditEventViewModel @Inject constructor(
 
     private val eventId: String = savedStateHandle.get<String>("eventId") ?: ""
 
+    // Поля формы
     private val _title = MutableStateFlow("")
     val title: StateFlow<String> = _title.asStateFlow()
     private val _location = MutableStateFlow("")
@@ -40,14 +41,21 @@ class EditEventViewModel @Inject constructor(
     private val _color = MutableStateFlow("#FF5733")
     val color: StateFlow<String> = _color.asStateFlow()
 
+    //  Состояние запроса 
     private val _requestState = MutableStateFlow<RequestState>(RequestState.Idle)
     val requestState: StateFlow<RequestState> = _requestState.asStateFlow()
 
+    //  Ошибка валидации 
     private val _titleError = MutableStateFlow<String?>(null)
     val titleError: StateFlow<String?> = _titleError.asStateFlow()
 
+    //  Навигационные события 
     private val _navigationEvents = MutableSharedFlow<EditEventNavigation>()
     val navigationEvents: SharedFlow<EditEventNavigation> = _navigationEvents.asSharedFlow()
+
+    //  Снекбар-сообщения 
+    private val _snackbarEvents = MutableSharedFlow<String>()
+    val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
 
     init { loadEvent() }
 
@@ -67,7 +75,9 @@ class EditEventViewModel @Inject constructor(
                     _color.value = event.color
                     _requestState.value = RequestState.Idle
                 }
-                is DataResult.Error -> _requestState.value = RequestState.Error(result.message)
+                is DataResult.Error -> {
+                    _requestState.value = RequestState.Error(result.message)
+                }
             }
         }
     }
@@ -98,9 +108,13 @@ class EditEventViewModel @Inject constructor(
             _requestState.value = RequestState.Loading
             when (val result = eventRepository.updateEvent(eventId, request)) {
                 is DataResult.Success -> {
+                    _snackbarEvents.emit("Событие обновлено")
                     _navigationEvents.emit(EditEventNavigation.GoBack)
                 }
-                is DataResult.Error -> _requestState.value = RequestState.Error(result.message)
+                is DataResult.Error -> {
+                    _requestState.value = RequestState.Error(result.message)
+                    _snackbarEvents.emit(result.message)
+                }
             }
         }
     }

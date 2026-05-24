@@ -17,7 +17,6 @@ class CreateListViewModel @Inject constructor(
     private val planningRepository: PlanningRepository
 ) : ViewModel() {
 
-    // Флаг, устанавливаемый из UI
     private var isTask: Boolean = false
 
     fun init(isTaskList: Boolean) {
@@ -39,8 +38,11 @@ class CreateListViewModel @Inject constructor(
     private val _requestState = MutableStateFlow<RequestState>(RequestState.Idle)
     val requestState: StateFlow<RequestState> = _requestState.asStateFlow()
 
-    private val _createdEvent = MutableSharedFlow<Unit>()
-    val createdEvent: SharedFlow<Unit> = _createdEvent.asSharedFlow()
+    private val _snackbarEvents = MutableSharedFlow<String>()
+    val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
+
+    private val _navigationEvents = MutableSharedFlow<Unit>()
+    val navigationEvents: SharedFlow<Unit> = _navigationEvents.asSharedFlow()
 
     fun updateTitle(value: String) {
         _title.value = value
@@ -92,11 +94,12 @@ class CreateListViewModel @Inject constructor(
             }
             when (result) {
                 is DataResult.Success -> {
-                    _requestState.value = RequestState.Success
-                    _createdEvent.emit(Unit)
+                    _snackbarEvents.emit("Список создан")
+                    _navigationEvents.emit(Unit)
                 }
                 is DataResult.Error -> {
                     _requestState.value = RequestState.Error(result.message)
+                    _snackbarEvents.emit(result.message)
                 }
             }
         }

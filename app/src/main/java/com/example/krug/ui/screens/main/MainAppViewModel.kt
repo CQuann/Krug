@@ -5,10 +5,10 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
-import com.example.krug.data.model.auth.UserData
 import com.example.krug.data.model.event.Event
 import com.example.krug.data.repository.AuthRepository
 import com.example.krug.data.repository.EventRepository
+import com.example.krug.di.InviteTokenHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,18 +16,17 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
+// ui/screens/main/MainAppViewModel.kt
 @HiltViewModel
 class MainAppViewModel @Inject constructor(
-    private val authRepository: AuthRepository,
     private val eventRepository: EventRepository,
-    private val sessionManager: SessionManager
+    private val sessionManager: SessionManager,
+    private val inviteTokenHolder: InviteTokenHolder
 ) : ViewModel() {
 
-    // Данные пользователя
     private val _userId = MutableStateFlow<String?>(null)
     val userId: StateFlow<String?> = _userId.asStateFlow()
 
-    // События
     private val _events = MutableStateFlow<List<Event>>(emptyList())
     val events: StateFlow<List<Event>> = _events.asStateFlow()
 
@@ -49,12 +48,63 @@ class MainAppViewModel @Inject constructor(
     private var eventsOffset = 0
     private val pageSize = 20
 
+    private val _showJoinDialog = MutableStateFlow(false)
+    val showJoinDialog: StateFlow<Boolean> = _showJoinDialog.asStateFlow()
+
+    private val _pendingJoinEvent = MutableStateFlow<Event?>(null)
+    val pendingJoinEvent: StateFlow<Event?> = _pendingJoinEvent.asStateFlow()
+
     init {
         viewModelScope.launch {
             _userId.value = sessionManager.getUserId()
-            Log.d("User id", _userId.value.toString())
             loadEvents(reset = true)
+            processPendingInvite()
         }
+    }
+
+    fun processPendingInvite() {
+        val token = inviteTokenHolder.getAndClearToken()
+        Log.d("InviteDebug", "processPendingInvite, token: $token")
+        if (token != null) {
+            joinEvent(token)
+        }
+    }
+
+//    private fun joinEvent(inviteToken: String) {
+//        viewModelScope.launch {
+//            _isRefreshing.value = true
+//            when (val result = eventRepository.joinEvent(inviteToken)) {
+//                is DataResult.Success -> {
+//                    _showJoinDialog.value = true
+//                    loadEvents(reset = true)
+//                }
+//                is DataResult.Error -> {
+//                    _error.value = result.message
+//                    _isRefreshing.value = false
+//                }
+//            }
+//        }
+//    }
+
+    private fun joinEvent(inviteToken: String) {
+        Log.d("InviteDebug", "Получен токен приглашения: $inviteToken")
+        _showJoinDialog.value = true
+        _pendingJoinEvent.value = Event(
+            eventId = "debug_event",
+            title = "Тестовое событие (заглушка)",
+            location = null,
+            startDateTime = null,
+            endDateTime = null,
+            color = "#FF5733",
+            status = "active",
+            description = "Событие создано для отладки приглашений"
+        )
+    }
+
+    fun dismissJoinDialog() { _showJoinDialog.value = false }
+
+    fun navigateToJoinedEvent(eventId: String) {
+        _showJoinDialog.value = false
     }
 
     fun onStatusChange(status: String) {
@@ -79,9 +129,9 @@ class MainAppViewModel @Inject constructor(
             when (val result = eventRepository.getEvents(_currentStatus.value, pageSize, eventsOffset)) {
                 is DataResult.Success -> {
                     val response = result.data
-                    _events.value = if (reset) response.items else _events.value + response.items
+                    _events.value = if (reset) response.events else _events.value + response.events
                     _totalEvents.value = response.total
-                    eventsOffset += response.items.size
+                    eventsOffset += response.events.size
                     _error.value = null
                 }
                 is DataResult.Error -> {
@@ -95,7 +145,7 @@ class MainAppViewModel @Inject constructor(
 
     fun loadMoreEvents() {
         if (_isLoadingMore.value || _isRefreshing.value) return
-        if (eventsOffset >= _totalEvents.value) return // всё загружено
+        if (eventsOffset >= _totalEvents.value) return
         loadEvents(reset = false)
     }
 

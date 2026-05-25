@@ -42,7 +42,6 @@ fun CreateEventScreen(
 
     Scaffold(snackbarHost = { SnackbarHost(snackbarHostState) }) { padding ->
         Column(modifier = Modifier.fillMaxSize().padding(padding)) {
-            // Заголовок приклеен к верху
             Text(
                 "Новое событие",
                 style = MaterialTheme.typography.headlineSmall,
@@ -50,13 +49,13 @@ fun CreateEventScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
 
-            // Прокручиваемая форма
+            // ui/screens/event/createEvent/CreateEventScreen.kt (фрагмент формы)
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(12.dp)   // единый отступ между полями
             ) {
                 OutlinedTextField(
                     value = formData.title,
@@ -68,6 +67,13 @@ fun CreateEventScreen(
                 )
 
                 OutlinedTextField(
+                    value = formData.location,
+                    onValueChange = onLocationChange,
+                    label = { Text("Местоположение") },
+                    modifier = Modifier.fillMaxWidth()
+                )
+
+                OutlinedTextField(
                     value = formData.description,
                     onValueChange = onDescriptionChange,
                     label = { Text("Описание") },
@@ -75,15 +81,10 @@ fun CreateEventScreen(
                     maxLines = 3
                 )
 
-                OutlinedTextField(
-                    value = formData.location,
-                    onValueChange = onLocationChange,
-                    label = { Text("Местоположение") },
-                    modifier = Modifier.fillMaxWidth()
-                )
+                Spacer(modifier = Modifier.height(2.dp))
 
-                Text("Начало", style = MaterialTheme.typography.titleMedium)
                 DateTimePickerField(
+                    label = "Начало",
                     date = formData.startDate,
                     time = formData.startTime,
                     onDateSelected = onStartDateChange,
@@ -92,8 +93,10 @@ fun CreateEventScreen(
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                Text("Окончание", style = MaterialTheme.typography.titleMedium)
+                Spacer(modifier = Modifier.height(2.dp))
+
                 DateTimePickerField(
+                    label = "Окончание",
                     date = formData.endDate,
                     time = formData.endTime,
                     onDateSelected = onEndDateChange,
@@ -101,6 +104,8 @@ fun CreateEventScreen(
                     enableTime = true,
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(2.dp))
 
                 ColorPickerField(
                     selectedColor = formData.color,
@@ -110,7 +115,6 @@ fun CreateEventScreen(
                 )
             }
 
-            // Кнопка приклеена к низу вместе с ошибкой
             Surface(tonalElevation = 8.dp) {
                 Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)) {
                     if (requestState is RequestState.Error) {

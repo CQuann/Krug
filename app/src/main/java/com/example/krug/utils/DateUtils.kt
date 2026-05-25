@@ -4,41 +4,43 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.LocalTime
 import java.time.OffsetDateTime
+import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 import java.time.format.DateTimeParseException
 
 object DateUtils {
 
+    private val isoFormatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME   // "2025-05-10T15:00:00Z"
+
     /**
      * Преобразует дату и время в ISO‑строку для отправки на сервер.
      * Если время не задано – только дата (YYYY-MM-DD),
-     * иначе полное локальное дата‑время (YYYY-MM-DDTHH:MM:SS).
+     * иначе дата‑время в UTC с секундами и суффиксом Z (YYYY-MM-DDTHH:MM:SSZ).
      */
     fun toIsoString(date: LocalDate?, time: LocalTime?): String? {
         return when {
             date == null -> null
             time == null -> date.toString()
-            else -> LocalDateTime.of(date, time).toString()
+            else -> {
+                // Дополняем время секундами (00), если они не заданы
+                val fullTime = time.withSecond(0)
+                OffsetDateTime.of(date, fullTime, ZoneOffset.UTC).format(isoFormatter)
+            }
         }
     }
 
     /**
-     * Извлекает дату из ISO‑8601 строки, содержащей как только дату, так и дату‑время с зоной.
-     * Например: "2026-05-10", "2026-05-10T15:00:00", "2026-05-10T15:00:00Z",
-     * "2026-05-10T15:00:00+03:00" – всегда вернёт LocalDate.
+     * Извлекает дату из ISO‑8601 строки (поддерживает форматы с зоной и без).
      */
     fun parseDate(dateStr: String?): LocalDate? {
         if (dateStr.isNullOrBlank()) return null
         return try {
-            // Пробуем как дату
             LocalDate.parse(dateStr)
         } catch (e: DateTimeParseException) {
             try {
-                // Пробуем как OffsetDateTime (с зоной)
                 OffsetDateTime.parse(dateStr).toLocalDate()
             } catch (e2: DateTimeParseException) {
                 try {
-                    // Пробуем как LocalDateTime (без зоны)
                     LocalDateTime.parse(dateStr).toLocalDate()
                 } catch (e3: DateTimeParseException) {
                     null
@@ -49,8 +51,6 @@ object DateUtils {
 
     /**
      * Извлекает время из ISO‑8601 строки.
-     * Например: "2026-05-10T15:00:00", "15:00:00", "2026-05-10T15:00:00Z" – вернёт LocalTime.
-     * Если передан только дата – вернёт null.
      */
     fun parseTime(timeStr: String?): LocalTime? {
         if (timeStr.isNullOrBlank()) return null
@@ -69,6 +69,10 @@ object DateUtils {
         }
     }
 
+    /**
+     * Форматирует дату и время для отображения пользователю.
+     * На вход ожидается ISO-8601 строка.
+     */
     fun formatFullDateTime(iso: String?): String? {
         val date = parseDate(iso) ?: return null
         val time = parseTime(iso)

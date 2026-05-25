@@ -27,7 +27,7 @@ data class DetailedEvent(
 )
 
 data class EventsListResponse(
-    val items: List<Event>,
+    val events: List<Event>,
     val total: Int
 )
 

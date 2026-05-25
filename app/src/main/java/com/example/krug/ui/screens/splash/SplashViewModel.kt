@@ -23,19 +23,24 @@ class SplashViewModel @Inject constructor(
 
     fun checkAuth() {
         viewModelScope.launch {
-            _navigationEvent.emit(SplashNavigation.GoToMain) //убрать
             val token = sessionManager.getToken()
             Log.d("Splash", "Token: $token")
+
+            // Если токена нет - сразу на логин
             if (token == null) {
                 _navigationEvent.emit(SplashNavigation.GoToLogin)
                 return@launch
             }
+
             Log.d("Splash", "Calling validateToken...")
             val result = authRepository.validateToken()
             Log.d("Splash", "Result: $result")
+
             if (result is DataResult.Success && result.data) {
+                // Токен валиден - на главный экран
                 _navigationEvent.emit(SplashNavigation.GoToMain)
             } else {
+                // Токен недействителен — очищаем всё и на логин
                 sessionManager.clearAll()
                 _navigationEvent.emit(SplashNavigation.GoToLogin)
             }

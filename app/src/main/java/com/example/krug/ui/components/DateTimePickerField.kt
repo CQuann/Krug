@@ -1,6 +1,7 @@
 package com.example.krug.ui.components
 
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.material.icons.Icons
@@ -43,17 +44,7 @@ fun DateTimePickerField(
     val dateText = date?.format(dateFormatter) ?: "Не выбрано"
     val timeText = time?.format(timeFormatter) ?: "Не выбрано"
 
-    Column(modifier = modifier) {
-        if (label.isNotEmpty()) {
-            Text(
-                text = label,
-                style = MaterialTheme.typography.labelMedium,
-                color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
-                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
-                modifier = Modifier.padding(bottom = 4.dp)
-            )
-        }
-
+    Box(modifier = modifier) {
         Surface(
             shape = MaterialTheme.shapes.extraSmall,
             border = BorderStroke(1.dp, if (enabled) MaterialTheme.colorScheme.outline
@@ -131,9 +122,24 @@ fun DateTimePickerField(
                 }
             }
         }
+
+        // Label внутри верхней границы
+        if (label.isNotEmpty()) {
+            Text(
+                text = label,
+                style = MaterialTheme.typography.labelMedium,
+                color = if (enabled) MaterialTheme.colorScheme.onSurfaceVariant
+                else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f),
+                modifier = Modifier
+                    .align(Alignment.TopStart)
+                    .offset(x = 12.dp, y = (-8).dp)
+                    .background(MaterialTheme.colorScheme.surface)
+                    .padding(horizontal = 4.dp)
+            )
+        }
     }
 
-    // DatePickerDialog – открывается только если enabled
+    // DatePickerDialog – только если enabled
     if (showDatePicker && enabled) {
         val datePickerState = rememberDatePickerState(
             initialSelectedDateMillis = date?.atStartOfDay(ZoneId.systemDefault())?.toInstant()?.toEpochMilli()
@@ -157,7 +163,7 @@ fun DateTimePickerField(
         }
     }
 
-    // TimePickerDialog – открывается только если enabled
+    // TimePickerDialog – только если enabled и время разрешено
     if (showTimePicker && enableTime && enabled) {
         val timePickerState = rememberTimePickerState(
             initialHour = time?.hour ?: 0,

@@ -261,6 +261,8 @@ fun SetupNavGraph() {
             val isLoadingMore by viewModel.isLoadingMore.collectAsStateWithLifecycle()
             val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
             val error by viewModel.error.collectAsStateWithLifecycle()
+            val showJoinDialog by viewModel.showJoinDialog.collectAsStateWithLifecycle()
+            val pendingJoinEvent by viewModel.pendingJoinEvent.collectAsStateWithLifecycle()
 
             MainAppScreen(
                 userId = userId,
@@ -275,7 +277,11 @@ fun SetupNavGraph() {
                 onEventClick = { eventId -> navController.navigate(Screen.EventScreen.passArgs(eventId)) },
                 onLoadMore = { viewModel.loadMoreEvents() },
                 onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) },
-                onRefresh = { viewModel.onRefresh() }
+                onRefresh = { viewModel.onRefresh() },
+                showJoinDialog = showJoinDialog,
+                pendingJoinEvent = pendingJoinEvent,
+                onDismissJoinDialog = { viewModel.dismissJoinDialog() },
+                onNavigateToJoinedEvent = { eventId -> navController.navigate(Screen.EventScreen.passArgs(eventId))}
             )
         }
 

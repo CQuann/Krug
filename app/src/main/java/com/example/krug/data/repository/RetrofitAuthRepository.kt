@@ -88,7 +88,8 @@ class RetrofitAuthRepository @Inject constructor(
     override suspend fun validateToken(): DataResult<Boolean> {
         return try {
             val response = authApi.validateToken()
-            DataResult.Success(response.success)
+            if (response.success) DataResult.Success(true)
+            else DataResult.Error(response.error ?: "Ошибка валидации токена")
         } catch (e: Exception) {
             DataResult.Error("Ошибка сети: ${e.message}")
         }

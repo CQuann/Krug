@@ -22,18 +22,15 @@ fun ColorPickerField(
     label: String = "Цвет"
 ) {
     var expanded by remember { mutableStateOf(false) }
-    val colors = remember { EventColors.colors }
-    val selected = remember(selectedColor) { colors.find { it.hex == selectedColor } }
-    val selectedColorValue = remember(selectedColor) { Color(selectedColor.toColorInt()) }
-    val contentColor = remember(selectedColor) { selected?.name ?: selectedColor }
+    val selected = EventColors.colors.find { it.hex == selectedColor }
 
     ExposedDropdownMenuBox(
         expanded = expanded,
-        onExpandedChange = { expanded = it },
+        onExpandedChange = { expanded = !expanded },
         modifier = modifier
     ) {
         OutlinedTextField(
-            value = contentColor,
+            value = selected?.name ?: selectedColor,
             onValueChange = {},
             readOnly = true,
             label = { Text(label) },
@@ -42,7 +39,7 @@ fun ColorPickerField(
                 Box(
                     modifier = Modifier
                         .size(24.dp)
-                        .background(selectedColorValue, shape = MaterialTheme.shapes.small)
+                        .background(Color(selectedColor.toColorInt()), shape = MaterialTheme.shapes.small)
                 )
             },
             modifier = Modifier
@@ -54,15 +51,14 @@ fun ColorPickerField(
             expanded = expanded,
             onDismissRequest = { expanded = false }
         ) {
-            colors.forEach { color ->
-                val itemColor = remember(color.hex) { Color(color.hex.toColorInt()) }
+            EventColors.colors.forEach { color ->
                 DropdownMenuItem(
                     text = {
                         Row(verticalAlignment = Alignment.CenterVertically) {
                             Box(
                                 modifier = Modifier
                                     .size(24.dp)
-                                    .background(itemColor, shape = MaterialTheme.shapes.small)
+                                    .background(Color(color.hex.toColorInt()), shape = MaterialTheme.shapes.small)
                             )
                             Spacer(modifier = Modifier.width(12.dp))
                             Text(color.name)

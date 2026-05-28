@@ -9,25 +9,46 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import com.example.krug.data.model.planning.ItemListData
+import com.example.krug.data.model.planning.PlanItem
+import com.example.krug.data.model.planning.PlanningModule
+import com.example.krug.data.model.planning.PollData
+import com.example.krug.data.model.planning.TaskListData
 import com.example.krug.ui.components.planning.ItemListModuleCard
 import com.example.krug.ui.components.planning.PollModuleCard
+import com.example.krug.ui.screens.event.LocalEventId
 import com.example.krug.ui.screens.event.planning.EventPlanningViewModel.CreationMode
 import com.example.krug.ui.screens.event.planning.EventPlanningViewModel.PlanningUiState
+import com.example.krug.ui.theme.KrugTheme
+import kotlinx.coroutines.flow.MutableSharedFlow
+import kotlinx.coroutines.flow.SharedFlow
 
 @Composable
 fun EventPlanningScreen(
-    viewModel: EventPlanningViewModel,
     uiState: PlanningUiState,
     creationMode: CreationMode,
-    showTypeDialog: Boolean
+    showTypeDialog: Boolean,
+    currentUserId: String?,
+    snackbarEvents: SharedFlow<String>,
+    onFabClick: () -> Unit,
+    onDismissTypeDialog: () -> Unit,
+    onSelectPoll: () -> Unit,
+    onSelectItemList: () -> Unit,
+    onSelectTaskList: () -> Unit,
+    onCreationFinished: () -> Unit,
+    onVotePoll: (String, List<Int>) -> Unit,
+    onAssignItem: (String, String, String, Boolean) -> Unit,
+    onCompleteTask: (String, String, Boolean) -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    val eventId = LocalEventId.current
 
     LaunchedEffect(Unit) {
-        viewModel.snackbarEvents.collect { msg ->
+        snackbarEvents.collect { msg ->
             snackbarHostState.showSnackbar(msg)
         }
     }
@@ -36,7 +57,7 @@ fun EventPlanningScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         floatingActionButton = {
             if (creationMode == CreationMode.None) {
-                FloatingActionButton(onClick = { viewModel.onFabClick() }) {
+                FloatingActionButton(onClick = onFabClick) {
                     Icon(Icons.Default.Add, contentDescription = "Добавить модуль")
                 }
             }
@@ -59,9 +80,6 @@ fun EventPlanningScreen(
                             ) {
                                 Text(uiState.message, color = MaterialTheme.colorScheme.error)
                                 Spacer(Modifier.height(16.dp))
-                                Button(onClick = { viewModel.loadModules() }) {
-                                    Text("Повторить")
-                                }
                             }
                         }
                         is PlanningUiState.Content -> {
@@ -79,26 +97,20 @@ fun EventPlanningScreen(
                                         when (module.type) {
                                             "poll" -> PollModuleCard(
                                                 module = module,
-                                                currentUserId = viewModel.getCurrentUserId(),
-                                                onVote = { pollId, indexes -> viewModel.votePoll(pollId, indexes) }
+                                                currentUserId = currentUserId,
+                                                onVote = { pollId, indexes -> onVotePoll(pollId, indexes) }
                                             )
                                             "item_list" -> ItemListModuleCard(
                                                 module = module,
-                                                currentUserId = viewModel.getCurrentUserId(),
-                                                onAssign = { type, moduleId, itemId, assign ->
-                                                    viewModel.assignItem(type, moduleId, itemId, assign)
-                                                },
+                                                currentUserId = currentUserId,
+                                                onAssign = { type, mId, iId, assign -> onAssignItem(type, mId, iId, assign) },
                                                 onComplete = null
                                             )
                                             "task_list" -> ItemListModuleCard(
                                                 module = module,
-                                                currentUserId = viewModel.getCurrentUserId(),
-                                                onAssign = { type, moduleId, itemId, assign ->
-                                                    viewModel.assignItem(type, moduleId, itemId, assign)
-                                                },
-                                                onComplete = { moduleId, itemId, completed ->
-                                                    viewModel.completeTask(moduleId, itemId, completed)
-                                                }
+                                                currentUserId = currentUserId,
+                                                onAssign = { type, mId, iId, assign -> onAssignItem(type, mId, iId, assign) },
+                                                onComplete = { mId, iId, completed -> onCompleteTask(mId, iId, completed) }
                                             )
                                         }
                                     }
@@ -118,7 +130,7 @@ fun EventPlanningScreen(
 
                     LaunchedEffect(Unit) {
                         pollViewModel.navigationEvents.collect {
-                            viewModel.onCreationFinished()
+                            onCreationFinished()
                         }
                     }
 
@@ -135,20 +147,20 @@ fun EventPlanningScreen(
                         onAddOption = pollViewModel::addOption,
                         onRemoveOption = pollViewModel::removeOption,
                         onMultipleChoiceToggle = pollViewModel::toggleMultipleChoice,
-                        onCreatePoll = { pollViewModel.createPoll(viewModel.getEventId()) },
-                        onCancel = { viewModel.onCreationFinished() }
+                        onCreatePoll = { pollViewModel.createPoll(eventId) },
+                        onCancel = { onCreationFinished() }
                     )
                 }
                 CreationMode.ItemList -> {
                     CreateListScreenWrapper(
                         isTask = false,
-                        eventPlanningViewModel = viewModel
+                        onCreationFinished = onCreationFinished
                     )
                 }
                 CreationMode.TaskList -> {
                     CreateListScreenWrapper(
                         isTask = true,
-                        eventPlanningViewModel = viewModel
+                        onCreationFinished = onCreationFinished
                     )
                 }
             }
@@ -157,10 +169,10 @@ fun EventPlanningScreen(
 
     if (showTypeDialog) {
         SelectModuleTypeDialog(
-            onDismiss = { viewModel.dismissTypeDialog() },
-            onSelectPoll = { viewModel.startCreatingPoll() },
-            onSelectItemList = { viewModel.startCreatingItemList() },
-            onSelectTaskList = { viewModel.startCreatingTaskList() }
+            onDismiss = onDismissTypeDialog,
+            onSelectPoll = onSelectPoll,
+            onSelectItemList = onSelectItemList,
+            onSelectTaskList = onSelectTaskList
         )
     }
 }
@@ -168,12 +180,12 @@ fun EventPlanningScreen(
 @Composable
 private fun CreateListScreenWrapper(
     isTask: Boolean,
-    eventPlanningViewModel: EventPlanningViewModel
+    onCreationFinished: () -> Unit
 ) {
+    val eventId = LocalEventId.current
     val listViewModel: CreateListViewModel = hiltViewModel(
         key = if (isTask) "TaskList" else "ItemList"
     )
-    // Инициализируем тип списка
     LaunchedEffect(Unit) {
         listViewModel.init(isTaskList = isTask)
     }
@@ -186,7 +198,7 @@ private fun CreateListScreenWrapper(
 
     LaunchedEffect(Unit) {
         listViewModel.navigationEvents.collect {
-            eventPlanningViewModel.onCreationFinished()
+            onCreationFinished()
         }
     }
 
@@ -201,7 +213,104 @@ private fun CreateListScreenWrapper(
         onItemChange = listViewModel::updateItem,
         onAddItem = listViewModel::addItem,
         onRemoveItem = listViewModel::removeItem,
-        onCreate = { listViewModel.create(eventPlanningViewModel.getEventId()) },
-        onCancel = { eventPlanningViewModel.onCreationFinished() }
+        onCreate = { listViewModel.create(eventId) },
+        onCancel = { onCreationFinished() }
     )
+}
+
+@Preview(showBackground = true, name = "Planning – список модулей")
+@Composable
+fun EventPlanningWithModulesPreview() {
+    KrugTheme {
+        CompositionLocalProvider(LocalEventId provides "test_event") {
+            EventPlanningScreen(
+                uiState = PlanningUiState.Content(
+                    modules = listOf(
+                        PlanningModule(
+                            id = "1", type = "poll", title = "Куда пойдём?",
+                            data = PollData(
+                                options = listOf("Парк", "Кафе", "Кино"),
+                                multiple_choice = false,
+                                votes_count = listOf(5, 3, 1),
+                                own_vote = listOf(0)
+                            )
+                        ),
+                        PlanningModule(
+                            id = "2", type = "item_list", title = "Что принести",
+                            data = ItemListData(
+                                items = listOf(
+                                    PlanItem(id = "1", text = "Мангал", assigned_user_id = null),
+                                    PlanItem(
+                                        id = "2",
+                                        text = "Уголь",
+                                        assigned_user_id = "user1",
+                                        assigned_user_name = "Петр"
+                                    )
+                                )
+                            )
+                        ),
+                        PlanningModule(
+                            id = "3", type = "task_list", title = "Задачи",
+                            data = TaskListData(
+                                items = listOf(
+                                    PlanItem(
+                                        id = "1",
+                                        text = "Купить билеты",
+                                        assigned_user_id = "user1",
+                                        assigned_user_name = "Петр",
+                                        completed = false
+                                    ),
+                                    PlanItem(
+                                        id = "2",
+                                        text = "Забронировать стол",
+                                        assigned_user_id = "user2",
+                                        assigned_user_name = "Иван",
+                                        completed = true
+                                    )
+                                )
+                            )
+                        )
+                    )
+                ),
+                creationMode = CreationMode.None,
+                showTypeDialog = false,
+                currentUserId = "user1",
+                snackbarEvents = MutableSharedFlow(),
+                onFabClick = {},
+                onDismissTypeDialog = {},
+                onSelectPoll = {},
+                onSelectItemList = {},
+                onSelectTaskList = {},
+                onCreationFinished = {},
+                onVotePoll = { _, _ -> },
+                onAssignItem = { _, _, _, _ -> },
+                onCompleteTask = { _, _, _ -> }
+            )
+        }
+    }
+}
+
+@Preview(showBackground = true, name = "Planning – диалог выбора типа")
+@Composable
+fun EventPlanningDialogPreview() {
+    KrugTheme {
+        CompositionLocalProvider(LocalEventId provides "test_event") {
+            EventPlanningScreen(
+                uiState = PlanningUiState.Content(emptyList()),
+                creationMode = CreationMode.None,
+                showTypeDialog = true,
+                currentUserId = "user1",
+                snackbarEvents = MutableSharedFlow(),
+                onFabClick = {},
+                onDismissTypeDialog = {},
+                onSelectPoll = {},
+                onSelectItemList = {},
+                onSelectTaskList = {},
+                onCreationFinished = {},
+                onVotePoll = { _, _ -> },
+                onAssignItem = { _, _, _, _ -> },
+                onCompleteTask = { _, _, _ -> }
+            )
+        }
+    }
 }

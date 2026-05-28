@@ -13,6 +13,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.krug.data.model.RequestState
+import com.example.krug.ui.screens.event.LocalEventId
 import com.example.krug.ui.theme.KrugTheme
 
 @Composable
@@ -146,7 +147,7 @@ fun CreateListFilledPreview() {
     KrugTheme {
         CreateItemOrTaskScreen(
             title = "Для готовки",
-            items = listOf("Картошка", "Маркошка", "Писька"),
+            items = listOf("Картошка", "Морковка", "Сосиски"),
             titleError = null,
             itemErrors = emptyMap(),
             requestState = RequestState.Idle,

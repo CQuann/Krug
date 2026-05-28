@@ -3,6 +3,7 @@ package com.example.krug.ui.screens.event.eventDetail
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
@@ -125,7 +126,7 @@ fun EventDetailScreen(
                                 contentDescription = null,
                                 modifier = Modifier.fillMaxSize().clip(CircleShape),
                                 contentScale = ContentScale.Crop,
-                                error = null
+                                error = painterResource(R.drawable.ic_default_event_avatar)
                             )
                         }
                     }
@@ -142,28 +143,35 @@ fun EventDetailScreen(
                     DetailField("Дата и время окончания", DateUtils.formatFullDateTime(event?.endDateTime), Icons.Default.Schedule)
                     DetailField("Описание", event?.description, Icons.Default.Description)
 
-                    // Пригласительная ссылка
+                    // Пригласительная ссылка с кнопкой копирования внутри поля
                     detailedEvent?.inviteLink?.let { link ->
                         val clipboardManager = LocalClipboardManager.current
-                        Spacer(Modifier.height(16.dp))
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            DetailField(
-                                "Ссылка для приглашения",
-                                link,
-                                Icons.Default.Link,
-                                modifier = Modifier.weight(1f),
-                                maxLines = 1,
-                                overflow = TextOverflow.Ellipsis
-                            )
-                            IconButton(onClick = {
-                                clipboardManager.setText(AnnotatedString(link))
-                                scope.launch {
-                                    snackbarHostState.showSnackbar("Ссылка скопирована")
+                        Spacer(Modifier.height(12.dp))
+                        OutlinedTextField(
+                            value = link,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Ссылка для приглашения") },
+                            singleLine = true,
+                            leadingIcon = {
+                                Icon(
+                                    Icons.Default.Link,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.primary
+                                )
+                            },
+                            trailingIcon = {
+                                IconButton(onClick = {
+                                    clipboardManager.setText(AnnotatedString(link))
+                                    scope.launch {
+                                        snackbarHostState.showSnackbar("Ссылка скопирована")
+                                    }
+                                }) {
+                                    Icon(Icons.Default.ContentCopy, contentDescription = "Скопировать")
                                 }
-                            }) {
-                                Icon(Icons.Default.ContentCopy, contentDescription = "Скопировать")
-                            }
-                        }
+                            },
+                            modifier = Modifier.fillMaxWidth()
+                        )
                     }
 
                     // Список участников
@@ -228,11 +236,14 @@ fun EventDetailScreen(
                         OutlinedButton(
                             onClick = onArchiveClick,
                             modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
-                            Icon(Icons.Default.Archive, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Архивировать событие")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Archive, null, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Архивировать событие")
+                            }
                         }
                     }
 
@@ -242,11 +253,14 @@ fun EventDetailScreen(
                         OutlinedButton(
                             onClick = onDeleteClick,
                             modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
                             colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                         ) {
-                            Icon(Icons.Default.Delete, null)
-                            Spacer(Modifier.width(8.dp))
-                            Text("Удалить событие")
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Icon(Icons.Default.Delete, null, modifier = Modifier.size(20.dp))
+                                Spacer(Modifier.width(8.dp))
+                                Text("Удалить событие")
+                            }
                         }
                     }
                 }
@@ -279,7 +293,7 @@ fun EventDetailScreen(
 
 // ------------ Preview ------------
 
-@Preview(showBackground = true, name = "Detail – создатель")
+@Preview(showBackground = true, name = "Detail – создатель", heightDp = 1200)
 @Composable
 fun EventDetailCreatorPreview() {
     KrugTheme {
@@ -292,7 +306,7 @@ fun EventDetailCreatorPreview() {
                 ),
                 inviteLink = "https://krug.netlify.app/invite?token=abc123",
                 members = listOf(
-                    Member(userId = "user1", displayName = "Петр", permissions = "100"), // создатель
+                    Member(userId = "user1", displayName = "Петр (вы)", permissions = "100"), // создатель
                     Member(userId = "user2", displayName = "Иван", permissions = "010"), // админ
                     Member(userId = "user3", displayName = "Мария", permissions = "001")  // участник
                 ),
@@ -314,9 +328,9 @@ fun EventDetailCreatorPreview() {
     }
 }
 
-@Preview(showBackground = true, name = "Detail – участник")
+@Preview(showBackground = true, name = "Detail – админ (без удаления)")
 @Composable
-fun EventDetailMemberPreview() {
+fun EventDetailAdminPreview() {
     KrugTheme {
         EventDetailScreen(
             detailedEvent = DetailedEvent(
@@ -327,12 +341,44 @@ fun EventDetailMemberPreview() {
                 ),
                 inviteLink = null,
                 members = listOf(
-                    Member(
-                        userId = "user1",
-                        displayName = "Петр",
-                        permissions = "100"
-                    ), // создатель
-                    Member(userId = "user2", displayName = "Иван", permissions = "001")  // участник
+                    Member(userId = "user1", displayName = "Петр", permissions = "100"), // создатель
+                    Member(userId = "user2", displayName = "Иван (вы)", permissions = "010"), // админ
+                    Member(userId = "user3", displayName = "Мария", permissions = "001")  // участник
+                ),
+                permissions = "010"
+            ),
+            requestState = RequestState.Idle,
+            showArchiveDialog = false,
+            showDeleteDialog = false,
+            canEdit = true, canUploadAvatar = true, canArchive = true, canDelete = false,
+            canManageMembers = true, canToggleAdmin = false,
+            currentUserId = "user2",
+            snackbarEvents = MutableSharedFlow(),
+            onBackClick = {}, onEditClick = {}, onUploadAvatarClick = {},
+            onArchiveClick = {}, onDeleteClick = {},
+            onDismissArchiveDialog = {}, onConfirmArchive = {},
+            onDismissDeleteDialog = {}, onConfirmDelete = {},
+            onRemoveMemberClick = {}, onToggleAdminClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, name = "Detail – участник")
+@Composable
+fun EventDetailMemberPreview() {
+    KrugTheme {
+        EventDetailScreen(
+            detailedEvent = DetailedEvent(
+                event = Event(
+                    eventId = "3", title = "Семинар", location = "Офис",
+                    startDateTime = "2026-07-01", endDateTime = null,
+                    description = "Обязательно присутствовать", color = "#FFC300", status = "active"
+                ),
+                inviteLink = null,
+                members = listOf(
+                    Member(userId = "user1", displayName = "Петр", permissions = "100"), // создатель
+                    Member(userId = "user2", displayName = "Иван", permissions = "010"), // админ
+                    Member(userId = "user3", displayName = "Мария (вы)", permissions = "001")  // участник
                 ),
                 permissions = "001"
             ),
@@ -341,7 +387,7 @@ fun EventDetailMemberPreview() {
             showDeleteDialog = false,
             canEdit = false, canUploadAvatar = false, canArchive = false, canDelete = false,
             canManageMembers = false, canToggleAdmin = false,
-            currentUserId = "user2",
+            currentUserId = "user3",
             snackbarEvents = MutableSharedFlow(),
             onBackClick = {}, onEditClick = {}, onUploadAvatarClick = {},
             onArchiveClick = {}, onDeleteClick = {},

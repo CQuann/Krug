@@ -1,15 +1,15 @@
 package com.example.krug.di
 
-import android.content.Context
-import coil.ImageLoader
+import com.example.krug.data.model.planning.PlanningModule
+import com.example.krug.data.model.planning.PlanningModuleDeserializer
 import com.example.krug.data.network.AuthApi
 import com.example.krug.data.network.EventApi
 import com.example.krug.data.network.PlanningApi
 import com.example.krug.utils.Constants.BASE_URL
+import com.google.gson.GsonBuilder
 import dagger.Module
 import dagger.Provides
 import dagger.hilt.InstallIn
-import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
 import okhttp3.logging.HttpLoggingInterceptor
@@ -35,10 +35,14 @@ object NetworkModule {
     @Provides
     @Singleton
     fun provideRetrofit(okHttpClient: OkHttpClient): Retrofit {
+        val gson = GsonBuilder()
+            .registerTypeAdapter(PlanningModule::class.java, PlanningModuleDeserializer())
+            .create()
+
         return Retrofit.Builder()
             .baseUrl(BASE_URL)
             .client(okHttpClient)
-            .addConverterFactory(GsonConverterFactory.create())
+            .addConverterFactory(GsonConverterFactory.create(gson))
             .build()
     }
 
@@ -56,6 +60,7 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun providePlanningApi(retrofit: Retrofit): PlanningApi =
-        retrofit.create(PlanningApi::class.java)
+    fun providePlanningApi(retrofit: Retrofit): PlanningApi {
+        return retrofit.create(PlanningApi::class.java)
+    }
 }

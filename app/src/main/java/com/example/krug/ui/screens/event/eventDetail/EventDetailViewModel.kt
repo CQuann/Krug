@@ -73,14 +73,14 @@ class EventDetailViewModel @Inject constructor(
     private fun applyPermissions(perms: String) {
         val isCreator = perms.length > 0 && perms[0] == '1'
         val isAdmin   = perms.length > 1 && perms[1] == '1'
-        _canEdit.value = isCreator || isAdmin
-        _canUploadAvatar.value = _canEdit.value
-        _canArchive.value = isCreator || isAdmin
-        _canDelete.value = isCreator
-        _canManageMembers.value = isCreator || isAdmin
-        _canToggleAdmin.value = isCreator
-    }
 
+        _canEdit.value = isCreator || isAdmin
+        _canUploadAvatar.value = isCreator || isAdmin
+        _canArchive.value = isCreator          // только создатель
+        _canDelete.value = isCreator           // только создатель
+        _canManageMembers.value = isCreator || isAdmin
+        _canToggleAdmin.value = isCreator      // только создатель может назначать других админов
+    }
     fun getCurrentUserId(): String? = sessionManager.cachedUserId
 
     fun onEditClick() {

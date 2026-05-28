@@ -30,11 +30,15 @@ import com.example.krug.utils.Constants
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
 
+// CompositionLocal для eventId – доступен всем вложенным компонентам
+val LocalEventId = compositionLocalOf<String> { error("No EventId provided") }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun EventScreen(
     event: Event?,
     requestState: RequestState,
+    eventId: String,
     snackbarEvents: SharedFlow<String>,
     onHeaderClick: () -> Unit,
     onBackClick: () -> Unit
@@ -47,80 +51,92 @@ fun EventScreen(
         }
     }
 
-    Scaffold(
-        snackbarHost = { SnackbarHost(snackbarHostState) },
-        topBar = {
-            TopAppBar(
-                title = {
-                    Row(
-                        modifier = Modifier.clickable { onHeaderClick() },
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Box(modifier = Modifier.size(36.dp)) {
-                            val avatarUrl = event?.let { "${Constants.BASE_URL}/event-avatars/${it.eventId}" }
-                            AsyncImage(
-                                model = avatarUrl,
-                                contentDescription = null,
-                                modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                contentScale = ContentScale.Crop,
-                                error = painterResource(R.drawable.ic_default_event_avatar)
+    CompositionLocalProvider(LocalEventId provides eventId) {
+        Scaffold(
+            snackbarHost = { SnackbarHost(snackbarHostState) },
+            topBar = {
+                TopAppBar(
+                    title = {
+                        Row(
+                            modifier = Modifier.clickable { onHeaderClick() },
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Box(modifier = Modifier.size(36.dp)) {
+                                val avatarUrl = event?.let { "${Constants.BASE_URL}/event-avatars/${it.eventId}" }
+                                AsyncImage(
+                                    model = avatarUrl,
+                                    contentDescription = null,
+                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                    contentScale = ContentScale.Crop,
+                                    error = painterResource(R.drawable.ic_default_event_avatar)
+                                )
+                            }
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = event?.title ?: "Загрузка...",
+                                style = MaterialTheme.typography.titleMedium
                             )
                         }
-                        Spacer(modifier = Modifier.width(8.dp))
-                        Text(
-                            text = event?.title ?: "Загрузка...",
-                            style = MaterialTheme.typography.titleMedium
-                        )
-                    }
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBackClick) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                }
-            )
-        }
-    ) { padding ->
-        Column(modifier = Modifier.padding(padding)) {
-            when (requestState) {
-                RequestState.Loading -> Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) { CircularProgressIndicator() }
-                is RequestState.Error -> Box(
-                    Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) { Text("Ошибка: ${requestState.message}", color = MaterialTheme.colorScheme.error) }
-                RequestState.Idle, RequestState.Success -> {
-                    var selectedTab by remember { mutableIntStateOf(1) }
-                    val tabs = listOf("Чат", "Планирование", "Альбом")
-
-                    SecondaryTabRow(selectedTabIndex = selectedTab) {
-                        tabs.forEachIndexed { index, title ->
-                            Tab(
-                                selected = selectedTab == index,
-                                onClick = { selectedTab = index },
-                                text = { Text(title) }
-                            )
+                    },
+                    navigationIcon = {
+                        IconButton(onClick = onBackClick) {
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
                         }
                     }
+                )
+            }
+        ) { padding ->
+            Column(modifier = Modifier.padding(padding)) {
+                when (requestState) {
+                    RequestState.Loading -> Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) { CircularProgressIndicator() }
+                    is RequestState.Error -> Box(
+                        Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) { Text("Ошибка: ${requestState.message}", color = MaterialTheme.colorScheme.error) }
+                    RequestState.Idle, RequestState.Success -> {
+                        var selectedTab by remember { mutableIntStateOf(1) }
+                        val tabs = listOf("Чат", "Планирование", "Альбом")
 
-                    when (selectedTab) {
-                        0 -> EmptyTabPlaceholder("Чат", Icons.AutoMirrored.Filled.Chat)
-                        1 -> {
-                            val planningViewModel: EventPlanningViewModel = hiltViewModel()
-                            val planningUiState by planningViewModel.uiState.collectAsStateWithLifecycle()
-                            val creationMode by planningViewModel.creationMode.collectAsStateWithLifecycle()
-                            val showTypeDialog by planningViewModel.showTypeDialog.collectAsStateWithLifecycle()
-
-                            EventPlanningScreen(
-                                viewModel = planningViewModel,
-                                uiState = planningUiState,
-                                creationMode = creationMode,
-                                showTypeDialog = showTypeDialog
-                            )
+                        SecondaryTabRow(selectedTabIndex = selectedTab) {
+                            tabs.forEachIndexed { index, title ->
+                                Tab(
+                                    selected = selectedTab == index,
+                                    onClick = { selectedTab = index },
+                                    text = { Text(title) }
+                                )
+                            }
                         }
-                        2 -> EmptyTabPlaceholder("Альбом", Icons.Default.PhotoLibrary)
+
+                        when (selectedTab) {
+                            0 -> EmptyTabPlaceholder("Чат", Icons.AutoMirrored.Filled.Chat)
+                            1 -> {
+                                val planningViewModel: EventPlanningViewModel = hiltViewModel()
+                                val planningUiState by planningViewModel.uiState.collectAsStateWithLifecycle()
+                                val creationMode by planningViewModel.creationMode.collectAsStateWithLifecycle()
+                                val showTypeDialog by planningViewModel.showTypeDialog.collectAsStateWithLifecycle()
+
+                                EventPlanningScreen(
+                                    uiState = planningUiState,
+                                    creationMode = creationMode,
+                                    showTypeDialog = showTypeDialog,
+                                    currentUserId = planningViewModel.getCurrentUserId(),
+                                    snackbarEvents = planningViewModel.snackbarEvents,
+                                    onFabClick = { planningViewModel.onFabClick() },
+                                    onDismissTypeDialog = { planningViewModel.dismissTypeDialog() },
+                                    onSelectPoll = { planningViewModel.startCreatingPoll() },
+                                    onSelectItemList = { planningViewModel.startCreatingItemList() },
+                                    onSelectTaskList = { planningViewModel.startCreatingTaskList() },
+                                    onCreationFinished = { planningViewModel.onCreationFinished() },
+                                    onVotePoll = { pollId, indexes -> planningViewModel.votePoll(pollId, indexes) },
+                                    onAssignItem = { type, mId, iId, assign -> planningViewModel.assignItem(type, mId, iId, assign) },
+                                    onCompleteTask = { mId, iId, completed -> planningViewModel.completeTask(mId, iId, completed) }
+                                )
+                            }
+                            2 -> EmptyTabPlaceholder("Альбом", Icons.Default.PhotoLibrary)
+                        }
                     }
                 }
             }
@@ -154,21 +170,24 @@ private fun EmptyTabPlaceholder(text: String, icon: ImageVector) {
 @Composable
 fun EventScreenPreview() {
     KrugTheme {
-        EventScreen(
-            event = Event(
+        CompositionLocalProvider(LocalEventId provides "1") {
+            EventScreen(
+                event = Event(
+                    eventId = "1",
+                    title = "Пикник",
+                    color = "#FF5733",
+                    status = "active",
+                    description = null,
+                    location = "Парк",
+                    startDateTime = "2026-05-10T15:00Z",
+                    endDateTime = "2026-05-10T18:00Z"
+                ),
+                requestState = RequestState.Idle,
                 eventId = "1",
-                title = "Пикник",
-                color = "#FF5733",
-                status = "active",
-                description = null,
-                location = "Парк",
-                startDateTime = "2026-05-10T15:00Z",
-                endDateTime = "2026-05-10T18:00Z"
-            ),
-            requestState = RequestState.Idle,
-            snackbarEvents = MutableSharedFlow(),
-            onHeaderClick = {},
-            onBackClick = {}
-        )
+                snackbarEvents = MutableSharedFlow(),
+                onHeaderClick = {},
+                onBackClick = {}
+            )
+        }
     }
 }

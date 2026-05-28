@@ -23,7 +23,6 @@ class EditEventViewModel @Inject constructor(
 
     private val eventId: String = savedStateHandle.get<String>("eventId") ?: ""
 
-    // Поля формы
     private val _title = MutableStateFlow("")
     val title: StateFlow<String> = _title.asStateFlow()
     private val _location = MutableStateFlow("")
@@ -41,21 +40,17 @@ class EditEventViewModel @Inject constructor(
     private val _color = MutableStateFlow("#FF5733")
     val color: StateFlow<String> = _color.asStateFlow()
 
-    //  Состояние запроса 
     private val _requestState = MutableStateFlow<RequestState>(RequestState.Idle)
     val requestState: StateFlow<RequestState> = _requestState.asStateFlow()
 
-    //  Ошибка валидации 
     private val _titleError = MutableStateFlow<String?>(null)
     val titleError: StateFlow<String?> = _titleError.asStateFlow()
 
-    //  Навигационные события 
-    private val _navigationEvents = MutableSharedFlow<EditEventNavigation>()
-    val navigationEvents: SharedFlow<EditEventNavigation> = _navigationEvents.asSharedFlow()
-
-    //  Снекбар-сообщения 
     private val _snackbarEvents = MutableSharedFlow<String>()
     val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
+
+    private val _navigationEvents = MutableSharedFlow<EditEventNavigation>()
+    val navigationEvents: SharedFlow<EditEventNavigation> = _navigationEvents.asSharedFlow()
 
     init { loadEvent() }
 
@@ -75,9 +70,7 @@ class EditEventViewModel @Inject constructor(
                     _color.value = event.color
                     _requestState.value = RequestState.Idle
                 }
-                is DataResult.Error -> {
-                    _requestState.value = RequestState.Error(result.message)
-                }
+                is DataResult.Error -> _requestState.value = RequestState.Error(result.message)
             }
         }
     }
@@ -98,8 +91,8 @@ class EditEventViewModel @Inject constructor(
         }
         val request = UpdateEventRequest(
             title = _title.value.trim(),
-            description = _description.value.ifBlank { null },
-            location = _location.value.ifBlank { null },
+            description = _description.value,
+            location = _location.value,
             startDateTime = DateUtils.toIsoString(_startDate.value, _startTime.value),
             endDateTime = DateUtils.toIsoString(_endDate.value, _endTime.value),
             color = _color.value

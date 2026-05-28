@@ -18,7 +18,7 @@ class EventViewModel @Inject constructor(
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    private val eventId: String = savedStateHandle.get<String>("eventId") ?: ""
+    val eventId: String = savedStateHandle.get<String>("eventId") ?: ""
 
     // Данные события (только базовые, без деталей)
     private val _event = MutableStateFlow<Event?>(null)

@@ -87,7 +87,7 @@ fun RegisterProfileScreen(
                 Spacer(Modifier.height(6.dp))
 
                 DateTimePickerField(
-                    label = "",
+                    label = "Дата рождения",
                     date = birthday.takeIf { it.isNotBlank() }?.let { LocalDate.parse(it) },
                     time = null,
                     onDateSelected = { onBirthdayChange(it?.toString() ?: "") },

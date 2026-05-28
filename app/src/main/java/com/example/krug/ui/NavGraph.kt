@@ -233,11 +233,14 @@ fun SetupNavGraph() {
             val requestState by viewModel.requestState.collectAsStateWithLifecycle()
             val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
 
+            val detailViewModel: EventDetailViewModel = hiltViewModel(
+                viewModelStoreOwner = navController.previousBackStackEntry!!
+            )
+
             LaunchedEffect(Unit) {
                 viewModel.navigationEvents.collect {
-                    navController.navigate(Screen.MainApp.route) {
-                        popUpTo(Screen.MainApp.route) { inclusive = true }
-                    }
+                    detailViewModel.loadEvent()
+                    navController.popBackStack()
                 }
             }
 
@@ -297,6 +300,7 @@ fun SetupNavGraph() {
             EventScreen(
                 event = event,
                 requestState = requestState,
+                eventId = viewModel.eventId,
                 snackbarEvents = viewModel.snackbarEvents,
                 onHeaderClick = {
                     event?.let { navController.navigate(Screen.EventDetail.passArgs(it.eventId)) }
@@ -329,7 +333,8 @@ fun SetupNavGraph() {
                             navController.navigate(Screen.EditEvent.passArgs(event.eventId))
                         is EventDetailViewModel.DetailNavigationEvent.UploadAvatar ->
                             navController.navigate(Screen.EventAvatarUpload.passArgs(event.eventId))
-                        EventDetailViewModel.DetailNavigationEvent.GoBack -> navController.popBackStack()
+                        EventDetailViewModel.DetailNavigationEvent.GoBack ->
+                            navController.popBackStack()
                     }
                 }
             }
@@ -378,10 +383,17 @@ fun SetupNavGraph() {
             val requestState by viewModel.requestState.collectAsStateWithLifecycle()
             val titleError by viewModel.titleError.collectAsStateWithLifecycle()
 
+            val detailViewModel: EventDetailViewModel = hiltViewModel(
+                viewModelStoreOwner = navController.previousBackStackEntry!!
+            )
+
             LaunchedEffect(Unit) {
                 viewModel.navigationEvents.collect { event ->
                     when (event) {
-                        EditEventNavigation.GoBack -> navController.popBackStack()
+                        EditEventNavigation.GoBack -> {
+                            detailViewModel.loadEvent()   // обновляем детальный экран
+                            navController.popBackStack()  // возвращаемся назад
+                        }
                     }
                 }
             }
@@ -422,16 +434,11 @@ fun SetupNavGraph() {
             val email by viewModel.email.collectAsStateWithLifecycle()
             val birthday by viewModel.birthday.collectAsStateWithLifecycle()
             val description by viewModel.description.collectAsStateWithLifecycle()
-            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
-            val isEditingAvatar by viewModel.isEditingAvatar.collectAsStateWithLifecycle()
+            val avatarUrl by viewModel.avatarUrl.collectAsStateWithLifecycle()
             val usernameAvailable by viewModel.usernameAvailable.collectAsStateWithLifecycle()
             val isCheckingUsername by viewModel.isCheckingUsername.collectAsStateWithLifecycle()
             val usernameError by viewModel.usernameError.collectAsStateWithLifecycle()
             val requestState by viewModel.requestState.collectAsStateWithLifecycle()
-
-            LaunchedEffect(Unit) {
-                viewModel.loadUser()
-            }
 
             ProfileScreen(
                 userData = userData,
@@ -441,8 +448,7 @@ fun SetupNavGraph() {
                 email = email,
                 birthday = birthday,
                 description = description,
-                avatarUri = avatarUri,
-                isEditingAvatar = isEditingAvatar,
+                avatarUrl = avatarUrl,
                 usernameAvailable = usernameAvailable,
                 isCheckingUsername = isCheckingUsername,
                 usernameError = usernameError,
@@ -455,8 +461,7 @@ fun SetupNavGraph() {
                 onUpdateUsername = { viewModel.updateUsername(it) },
                 onUpdateBirthday = { viewModel.updateBirthday(it) },
                 onUpdateDescription = { viewModel.updateDescription(it) },
-                onStartAvatarEditing = { viewModel.startAvatarEditing() },
-                onSetAvatarUri = { viewModel.setAvatarUri(it) },
+                onUploadAvatar = { uri -> viewModel.uploadAvatar(uri) },
                 onSaveProfile = { viewModel.saveProfile() },
                 onLogout = { viewModel.logout() },
                 onNavigateToLogin = {

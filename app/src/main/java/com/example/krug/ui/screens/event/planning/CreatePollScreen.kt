@@ -36,7 +36,6 @@ fun CreatePollScreen(
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
 
-    // Показываем сообщения из ViewModel
     LaunchedEffect(Unit) {
         snackbarEvents.collect { message ->
             snackbarHostState.showSnackbar(message)
@@ -99,7 +98,6 @@ fun CreatePollScreen(
 
                 Spacer(Modifier.height(8.dp))
 
-                // Кнопка добавления варианта
                 Box(modifier = Modifier.fillMaxWidth(), contentAlignment = Alignment.Center) {
                     FloatingActionButton(
                         onClick = onAddOption,
@@ -110,14 +108,12 @@ fun CreatePollScreen(
                     }
                 }
 
-                // Ошибка запроса
                 if (requestState is RequestState.Error) {
                     Spacer(Modifier.height(8.dp))
                     Text(requestState.message, color = MaterialTheme.colorScheme.error)
                 }
             }
 
-            // Нижняя панель с кнопками
             Surface(tonalElevation = 8.dp) {
                 Row(
                     modifier = Modifier
@@ -153,17 +149,17 @@ fun CreatePollEmptyPreview() {
             title = "",
             options = listOf("", ""),
             multipleChoice = false,
+            titleError = null,
             optionErrors = emptyMap(),
             requestState = RequestState.Idle,
+            snackbarEvents = MutableSharedFlow(),
             onQuestionChange = {},
             onOptionChange = { _, _ -> },
             onAddOption = {},
             onRemoveOption = {},
             onMultipleChoiceToggle = {},
             onCreatePoll = {},
-            snackbarEvents = MutableSharedFlow(),
-            onCancel = {},
-            titleError = ""
+            onCancel = {}
         )
     }
 }
@@ -179,15 +175,15 @@ fun CreatePollErrorPreview() {
             titleError = "Введите вопрос",
             optionErrors = mapOf(1 to "Заполните вариант"),
             requestState = RequestState.Idle,
+            snackbarEvents = MutableSharedFlow(),
             onQuestionChange = {},
             onOptionChange = { _, _ -> },
             onAddOption = {},
             onRemoveOption = {},
             onMultipleChoiceToggle = {},
             onCreatePoll = {},
-            onCancel = {},
-            snackbarEvents = MutableSharedFlow()
-            )
+            onCancel = {}
+        )
     }
 }
 
@@ -202,15 +198,15 @@ fun CreatePollLoadingPreview() {
             titleError = null,
             optionErrors = emptyMap(),
             requestState = RequestState.Loading,
+            snackbarEvents = MutableSharedFlow(),
             onQuestionChange = {},
             onOptionChange = { _, _ -> },
             onAddOption = {},
             onRemoveOption = {},
             onMultipleChoiceToggle = {},
             onCreatePoll = {},
-            onCancel = {},
-            snackbarEvents = MutableSharedFlow(),
-            )
+            onCancel = {}
+        )
     }
 }
 
@@ -225,14 +221,14 @@ fun CreatePollNetworkErrorPreview() {
             titleError = null,
             optionErrors = emptyMap(),
             requestState = RequestState.Error("Нет соединения"),
+            snackbarEvents = MutableSharedFlow(),
             onQuestionChange = {},
             onOptionChange = { _, _ -> },
             onAddOption = {},
             onRemoveOption = {},
             onMultipleChoiceToggle = {},
             onCreatePoll = {},
-            onCancel = {},
-            snackbarEvents = MutableSharedFlow(),
-            )
+            onCancel = {}
+        )
     }
 }

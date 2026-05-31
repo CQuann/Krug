@@ -3,30 +3,48 @@ package com.example.krug.data.repository
 import android.content.Context
 import android.net.Uri
 import com.example.krug.data.local.SessionManager
+import com.example.krug.data.model.ApiResponse
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.event.*
 import com.example.krug.data.network.EventApi
 import com.example.krug.utils.ImageUtils
+import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class RetrofitEventRepository @Inject constructor(
     private val eventApi: EventApi,
-    private val sessionManager: SessionManager,
     @ApplicationContext private val context: Context
 ) : EventRepository {
+
+    private val gson = Gson()
+
+    private fun parseErrorMessage(e: Exception): String {
+        return if (e is HttpException) {
+            try {
+                val errorBody = e.response()?.errorBody()?.string()
+                val apiResponse = gson.fromJson(errorBody, ApiResponse::class.java)
+                apiResponse.error ?: "Ошибка ${e.code()}"
+            } catch (_: Exception) {
+                "Ошибка ${e.code()}: ${e.message()}"
+            }
+        } else {
+            "Ошибка сети: ${e.message}"
+        }
+    }
 
     override suspend fun createEvent(request: CreateEventRequest): DataResult<Event> {
         return try {
             val response = eventApi.createEvent(request)
             DataResult.Success(response)
         } catch (e: Exception) {
-            DataResult.Error("Ошибка: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -39,7 +57,7 @@ class RetrofitEventRepository @Inject constructor(
             val response = eventApi.getEvents(status, limit, offset)
             DataResult.Success(response)
         } catch (e: Exception) {
-            DataResult.Error("Ошибка загрузки событий: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -48,7 +66,7 @@ class RetrofitEventRepository @Inject constructor(
             val response = eventApi.getEvent(id)
             DataResult.Success(response)
         } catch (e: Exception) {
-            DataResult.Error("Ошибка загрузки события: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -57,7 +75,7 @@ class RetrofitEventRepository @Inject constructor(
             val response = eventApi.updateEvent(id, request)
             DataResult.Success(response)
         } catch (e: Exception) {
-            DataResult.Error("Ошибка обновления: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -65,9 +83,9 @@ class RetrofitEventRepository @Inject constructor(
         return try {
             val response = eventApi.updateEventStatus(id, StatusUpdateRequest(status))
             if (response.success) DataResult.Success(Unit)
-            else DataResult.Error(response.error ?: "Ошибка изменения статуса")
+            else DataResult.Error(response.error ?: "Неизвестная ошибка")
         } catch (e: Exception) {
-            DataResult.Error("Ошибка: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -75,9 +93,9 @@ class RetrofitEventRepository @Inject constructor(
         return try {
             val response = eventApi.deleteEvent(id)
             if (response.success) DataResult.Success(Unit)
-            else DataResult.Error(response.error ?: "Ошибка удаления")
+            else DataResult.Error(response.error ?: "Неизвестная ошибка")
         } catch (e: Exception) {
-            DataResult.Error("Ошибка: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -90,9 +108,9 @@ class RetrofitEventRepository @Inject constructor(
             val part = MultipartBody.Part.createFormData("avatar", compressedFile.name, requestBody)
             val response = eventApi.uploadEventAvatar(eventId, part)
             if (response.success) DataResult.Success(Unit)
-            else DataResult.Error(response.error ?: "Ошибка загрузки")
+            else DataResult.Error(response.error ?: "Неизвестная ошибка")
         } catch (e: Exception) {
-            DataResult.Error("Ошибка: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -100,9 +118,9 @@ class RetrofitEventRepository @Inject constructor(
         return try {
             val response = eventApi.removeMember(eventId, userId)
             if (response.success) DataResult.Success(Unit)
-            else DataResult.Error(response.error ?: "Ошибка удаления участника")
+            else DataResult.Error(response.error ?: "Неизвестная ошибка")
         } catch (e: Exception) {
-            DataResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -117,9 +135,9 @@ class RetrofitEventRepository @Inject constructor(
                 UpdateMemberPermissionsRequest(permissions)
             )
             if (response.success) DataResult.Success(Unit)
-            else DataResult.Error(response.error ?: "Ошибка изменения прав")
+            else DataResult.Error(response.error ?: "Неизвестная ошибка")
         } catch (e: Exception) {
-            DataResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -127,9 +145,9 @@ class RetrofitEventRepository @Inject constructor(
         return try {
             val response = eventApi.joinEvent(JoinEventRequest(inviteToken))
             if (response.success) DataResult.Success(Unit)
-            else DataResult.Error(response.error ?: "Ошибка вступления в событие")
+            else DataResult.Error(response.error ?: "Неизвестная ошибка")
         } catch (e: Exception) {
-            DataResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 }

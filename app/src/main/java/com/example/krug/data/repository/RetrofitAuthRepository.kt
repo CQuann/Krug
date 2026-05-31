@@ -4,25 +4,41 @@ import android.content.Context
 import android.net.Uri
 import android.util.Log
 import com.example.krug.data.local.SessionManager
+import com.example.krug.data.model.ApiResponse
 import com.example.krug.data.model.DataResult
-import com.example.krug.data.model.auth.UserData
-import com.example.krug.data.model.auth.UserEditRequest
 import com.example.krug.data.model.auth.*
 import com.example.krug.data.network.AuthApi
 import com.example.krug.utils.ImageUtils
+import com.google.gson.Gson
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
+import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class RetrofitAuthRepository @Inject constructor(
     private val authApi: AuthApi,
-    private val sessionManager: SessionManager,
     @ApplicationContext private val context: Context
 ) : AuthRepository {
+
+    private val gson = Gson()
+
+    private fun parseErrorMessage(e: Exception): String {
+        return if (e is HttpException) {
+            try {
+                val errorBody = e.response()?.errorBody()?.string()
+                val apiResponse = gson.fromJson(errorBody, ApiResponse::class.java)
+                apiResponse.error ?: "Ошибка ${e.code()}"
+            } catch (_: Exception) {
+                "Ошибка ${e.code()}: ${e.message()}"
+            }
+        } else {
+            "Ошибка сети: ${e.message}"
+        }
+    }
 
     override suspend fun requestCode(email: String): DataResult<Unit> {
         return try {
@@ -30,7 +46,7 @@ class RetrofitAuthRepository @Inject constructor(
             if (response.success) DataResult.Success(Unit)
             else DataResult.Error(response.error ?: "Неизвестная ошибка")
         } catch (e: Exception) {
-            DataResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -48,7 +64,7 @@ class RetrofitAuthRepository @Inject constructor(
                 else -> DataResult.Error("Неизвестный ответ сервера")
             }
         } catch (e: Exception) {
-            DataResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -71,7 +87,7 @@ class RetrofitAuthRepository @Inject constructor(
                 DataResult.Error(response.error ?: "Ошибка регистрации")
             }
         } catch (e: Exception) {
-            DataResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -81,7 +97,7 @@ class RetrofitAuthRepository @Inject constructor(
             Log.d("RetrofitAuthRepository", response.success.toString())
             DataResult.Success(response.success)
         } catch (e: Exception) {
-            DataResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -91,7 +107,7 @@ class RetrofitAuthRepository @Inject constructor(
             if (response.success) DataResult.Success(true)
             else DataResult.Error(response.error ?: "Ошибка валидации токена")
         } catch (e: Exception) {
-            DataResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -101,7 +117,7 @@ class RetrofitAuthRepository @Inject constructor(
             if (response.success) DataResult.Success(Unit)
             else DataResult.Error(response.error ?: "Ошибка выхода")
         } catch (e: Exception) {
-            DataResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -111,7 +127,7 @@ class RetrofitAuthRepository @Inject constructor(
             Log.d("getUserData", response.toString())
             DataResult.Success(response.user)
         } catch (e: Exception) {
-            DataResult.Error("Ошибка получения данных: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -129,7 +145,7 @@ class RetrofitAuthRepository @Inject constructor(
             if (response.success) DataResult.Success(Unit)
             else DataResult.Error(response.error ?: "Ошибка редактирования")
         } catch (e: Exception) {
-            DataResult.Error("Ошибка сети: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 
@@ -145,7 +161,7 @@ class RetrofitAuthRepository @Inject constructor(
             if (response.success) DataResult.Success(Unit)
             else DataResult.Error(response.error ?: "Ошибка загрузки")
         } catch (e: Exception) {
-            DataResult.Error("Ошибка: ${e.message}")
+            DataResult.Error(parseErrorMessage(e))
         }
     }
 }

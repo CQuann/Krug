@@ -1,9 +1,12 @@
 package com.example.krug.data.repository
 
+import com.example.krug.data.model.ApiResponse
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.DataResult.*
 import com.example.krug.data.network.PlanningApi
 import com.example.krug.data.model.planning.*
+import com.google.gson.Gson
+import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -12,42 +15,51 @@ class RetrofitPlanningRepository @Inject constructor(
     private val api: PlanningApi
 ) : PlanningRepository {
 
+    private val gson = Gson()
+
+    private fun parseErrorMessage(e: Exception): String {
+        return if (e is HttpException) {
+            try {
+                val errorBody = e.response()?.errorBody()?.string()
+                val apiResponse = gson.fromJson(errorBody, ApiResponse::class.java)
+                apiResponse.error ?: "Ошибка ${e.code()}"
+            } catch (parseEx: Exception) {
+                "Ошибка ${e.code()}: ${e.message()}"
+            }
+        } else {
+            "Ошибка сети: ${e.message}"
+        }
+    }
+
     override suspend fun getPlanningModules(eventId: String): DataResult<PlanningModulesResponse> {
         return try {
-            val response = api.getPlanningModules(eventId)
-            Success(response)
+            Success(api.getPlanningModules(eventId))
         } catch (e: Exception) {
-            Error("Ошибка загрузки модулей: ${e.message}")
+            Error(parseErrorMessage(e))
         }
     }
 
-    override suspend fun createPoll(eventId: String, request: CreatePollRequest): DataResult<Unit> {
+    override suspend fun createPoll(eventId: String, request: CreatePollRequest): DataResult<PlanningModule> {
         return try {
-            val response = api.createPoll(eventId, request)
-            if (response.success) Success(Unit)
-            else Error(response.error ?: "Ошибка создания опроса")
+            Success(api.createPoll(eventId, request))
         } catch (e: Exception) {
-            Error("Сетевая ошибка: ${e.message}")
+            Error(parseErrorMessage(e))
         }
     }
 
-    override suspend fun createItemList(eventId: String, request: CreateItemListRequest): DataResult<Unit> {
+    override suspend fun createItemList(eventId: String, request: CreateItemListRequest): DataResult<PlanningModule> {
         return try {
-            val response = api.createItemList(eventId, request)
-            if (response.success) Success(Unit)
-            else Error(response.error ?: "Ошибка создания списка вещей")
+            Success(api.createItemList(eventId, request))
         } catch (e: Exception) {
-            Error("Сетевая ошибка: ${e.message}")
+            Error(parseErrorMessage(e))
         }
     }
 
-    override suspend fun createTaskList(eventId: String, request: CreateTaskListRequest): DataResult<Unit> {
+    override suspend fun createTaskList(eventId: String, request: CreateTaskListRequest): DataResult<PlanningModule> {
         return try {
-            val response = api.createTaskList(eventId, request)
-            if (response.success) Success(Unit)
-            else Error(response.error ?: "Ошибка создания списка задач")
+            Success(api.createTaskList(eventId, request))
         } catch (e: Exception) {
-            Error("Сетевая ошибка: ${e.message}")
+            Error(parseErrorMessage(e))
         }
     }
 
@@ -57,7 +69,7 @@ class RetrofitPlanningRepository @Inject constructor(
             if (response.success) Success(Unit)
             else Error(response.error ?: "Ошибка голосования")
         } catch (e: Exception) {
-            Error("Сетевая ошибка: ${e.message}")
+            Error(parseErrorMessage(e))
         }
     }
 
@@ -69,7 +81,7 @@ class RetrofitPlanningRepository @Inject constructor(
             if (response.success) Success(Unit)
             else Error(response.error ?: "Ошибка бронирования")
         } catch (e: Exception) {
-            Error("Сетевая ошибка: ${e.message}")
+            Error(parseErrorMessage(e))
         }
     }
 
@@ -81,7 +93,7 @@ class RetrofitPlanningRepository @Inject constructor(
             if (response.success) Success(Unit)
             else Error(response.error ?: "Ошибка выполнения")
         } catch (e: Exception) {
-            Error("Сетевая ошибка: ${e.message}")
+            Error(parseErrorMessage(e))
         }
     }
 }

@@ -15,19 +15,19 @@ interface PlanningApi {
     suspend fun createPoll(
         @Path("eventId") eventId: String,
         @Body request: CreatePollRequest
-    ): ApiResponse
+    ): PlanningModule
 
     @POST("events/{eventId}/planning/items")
     suspend fun createItemList(
         @Path("eventId") eventId: String,
         @Body request: CreateItemListRequest
-    ): ApiResponse
+    ): PlanningModule
 
     @POST("events/{eventId}/planning/tasks")
     suspend fun createTaskList(
         @Path("eventId") eventId: String,
         @Body request: CreateTaskListRequest
-    ): ApiResponse
+    ): PlanningModule
 
     // Голосование в опросе
     @POST("events/{eventId}/planning/poll/{pollId}/vote")

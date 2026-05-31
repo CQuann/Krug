@@ -23,7 +23,7 @@ class RetrofitPlanningRepository @Inject constructor(
                 val errorBody = e.response()?.errorBody()?.string()
                 val apiResponse = gson.fromJson(errorBody, ApiResponse::class.java)
                 apiResponse.error ?: "Ошибка ${e.code()}"
-            } catch (parseEx: Exception) {
+            } catch (_: Exception) {
                 "Ошибка ${e.code()}: ${e.message()}"
             }
         } else {

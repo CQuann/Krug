@@ -1,8 +1,11 @@
 package com.example.krug.ui
 
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavType
@@ -10,7 +13,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
-import com.example.krug.ui.screens.auth.AvatarUploadScreen
+import com.example.krug.ui.components.PhotoUploadScreen
 import com.example.krug.ui.screens.auth.AvatarUploadViewModel
 import com.example.krug.ui.screens.auth.LoginEmailScreen
 import com.example.krug.ui.screens.auth.LoginEmailViewModel
@@ -24,7 +27,6 @@ import com.example.krug.ui.screens.event.EventViewModel
 import com.example.krug.ui.screens.event.createEvent.CreateEventNavigation
 import com.example.krug.ui.screens.event.createEvent.CreateEventScreen
 import com.example.krug.ui.screens.event.createEvent.CreateEventViewModel
-import com.example.krug.ui.screens.event.createEvent.EventAvatarUploadScreen
 import com.example.krug.ui.screens.event.createEvent.EventAvatarUploadViewModel
 import com.example.krug.ui.screens.event.createEvent.EventFormData
 import com.example.krug.ui.screens.event.editEvent.EditEventNavigation
@@ -181,13 +183,17 @@ fun SetupNavGraph() {
                 }
             }
 
-            AvatarUploadScreen(
+            PhotoUploadScreen(
+                title = "Добавьте фото профиля",
+                currentUri = avatarUri,
                 requestState = requestState,
-                avatarUri = avatarUri,
                 snackbarEvents = viewModel.snackbarEvents,
+                shape = CircleShape,
+                uploadButtonText = "Загрузить",
+                showSkipButton = true,
                 onSetAvatarUri = { viewModel.setAvatarUri(it) },
-                onUploadAvatar = { viewModel.uploadAvatar() },
-                onSkipAvatar = { viewModel.skipAvatar() }
+                onUploadClick = { viewModel.uploadAvatar() },
+                onSkipClick = { viewModel.skipAvatar() }
             )
         }
 
@@ -202,7 +208,7 @@ fun SetupNavGraph() {
                 viewModel.navigationEvents.collect { nav ->
                     when (nav) {
                         is CreateEventNavigation.GoToEventAvatarUpload ->
-                            navController.navigate(Screen.EventAvatarUpload.passArgs(nav.eventId))
+                            navController.navigate(Screen.EventCreateAvatarUpload.passArgs(nav.eventId))
                     }
                 }
             }
@@ -221,6 +227,70 @@ fun SetupNavGraph() {
                 onEndTimeChange = viewModel::updateEndTime,
                 onColorChange = viewModel::updateColor,
                 onSaveClick = viewModel::createEvent
+            )
+        }
+
+        // Uploading event's avatar (creating)
+        composable(
+            route = Screen.EventCreateAvatarUpload.route,
+            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+        ) { _ ->
+            val viewModel: EventAvatarUploadViewModel = hiltViewModel()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
+            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
+
+            LaunchedEffect(Unit) {
+                viewModel.navigationEvents.collect {
+                    navController.navigate(Screen.MainApp.route) {
+                        popUpTo(Screen.CreateEvent.route) { inclusive = true }
+                    }
+                }
+            }
+
+            PhotoUploadScreen(
+                title = "Добавьте фото события",
+                currentUri = avatarUri,
+                requestState = requestState,
+                snackbarEvents = viewModel.snackbarEvents,
+                shape = RoundedCornerShape(16.dp),
+                uploadButtonText = "Загрузить",
+                showSkipButton = true,
+                onSetAvatarUri = { viewModel.setAvatarUri(it) },
+                onUploadClick = { viewModel.uploadAvatar() },
+                onSkipClick = { viewModel.skip() }
+            )
+        }
+
+        // Uploading event's avatar (detail)
+        composable(
+            route = Screen.EventAvatarUpload.route,
+            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+        ) { _ ->
+            val viewModel: EventAvatarUploadViewModel = hiltViewModel()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
+            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
+            val detailViewModel: EventDetailViewModel = hiltViewModel(
+                viewModelStoreOwner = navController.previousBackStackEntry!!
+            )
+
+            LaunchedEffect(Unit) {
+                viewModel.navigationEvents.collect {
+                    detailViewModel.loadEvent()
+                    navController.popBackStack()
+                }
+            }
+
+            PhotoUploadScreen(
+                title = "Добавьте фото события",
+                currentUri = avatarUri,
+                requestState = requestState,
+                snackbarEvents = viewModel.snackbarEvents,
+                shape = RoundedCornerShape(16.dp),
+                uploadButtonText = "Загрузить",
+                showSkipButton = true,
+                onSetAvatarUri = { viewModel.setAvatarUri(it) },
+                onUploadClick = { viewModel.uploadAvatar() },
+                onSkipClick = { viewModel.skip() }
             )
         }
 
@@ -244,13 +314,17 @@ fun SetupNavGraph() {
                 }
             }
 
-            EventAvatarUploadScreen(
+            PhotoUploadScreen(
+                title = "Добавьте фото события",
+                currentUri = avatarUri,
                 requestState = requestState,
-                avatarUri = avatarUri,
                 snackbarEvents = viewModel.snackbarEvents,
-                onSetAvatarUri = viewModel::setAvatarUri,
-                onUploadAvatar = viewModel::uploadAvatar,
-                onSkip = viewModel::skip
+                shape = RoundedCornerShape(16.dp),
+                uploadButtonText = "Загрузить",
+                showSkipButton = true,
+                onSetAvatarUri = { viewModel.setAvatarUri(it) },
+                onUploadClick = { viewModel.uploadAvatar() },
+                onSkipClick = { viewModel.skip() }
             )
         }
 
@@ -391,8 +465,8 @@ fun SetupNavGraph() {
                 viewModel.navigationEvents.collect { event ->
                     when (event) {
                         EditEventNavigation.GoBack -> {
-                            detailViewModel.loadEvent()   // обновляем детальный экран
-                            navController.popBackStack()  // возвращаемся назад
+                            detailViewModel.loadEvent()
+                            navController.popBackStack()
                         }
                     }
                 }
@@ -461,7 +535,7 @@ fun SetupNavGraph() {
                 onUpdateUsername = { viewModel.updateUsername(it) },
                 onUpdateBirthday = { viewModel.updateBirthday(it) },
                 onUpdateDescription = { viewModel.updateDescription(it) },
-                onUploadAvatar = { uri -> viewModel.uploadAvatar(uri) },
+                onChangePhotoClick = { navController.navigate(Screen.ProfilePhotoUpload.route) },
                 onSaveProfile = { viewModel.saveProfile() },
                 onLogout = { viewModel.logout() },
                 onNavigateToLogin = {
@@ -469,6 +543,33 @@ fun SetupNavGraph() {
                         popUpTo(Screen.Splash.route) { inclusive = true }
                     }
                 }
+            )
+        }
+
+        composable(Screen.ProfilePhotoUpload.route) {
+            val viewModel: AvatarUploadViewModel = hiltViewModel()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
+            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
+            val profileViewModel: ProfileViewModel = hiltViewModel(navController.previousBackStackEntry!!)
+
+            LaunchedEffect(Unit) {
+                viewModel.navigationEvents.collect {
+                    profileViewModel.loadUser()
+                    navController.popBackStack()
+                }
+            }
+
+            PhotoUploadScreen(
+                title = "Изменить фото профиля",
+                currentUri = avatarUri,
+                requestState = requestState,
+                snackbarEvents = viewModel.snackbarEvents,
+                shape = CircleShape,
+                uploadButtonText = "Загрузить",
+                showBackButton = true,
+                onSetAvatarUri = { viewModel.setAvatarUri(it) },
+                onUploadClick = { viewModel.uploadAvatar() },
+                onBackClick = { navController.popBackStack() }
             )
         }
     }

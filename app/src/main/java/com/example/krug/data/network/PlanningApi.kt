@@ -17,13 +17,13 @@ interface PlanningApi {
         @Body request: CreatePollRequest
     ): PlanningModule
 
-    @POST("events/{eventId}/planning/items")
+    @POST("events/{eventId}/planning/item_list")
     suspend fun createItemList(
         @Path("eventId") eventId: String,
         @Body request: CreateItemListRequest
     ): PlanningModule
 
-    @POST("events/{eventId}/planning/tasks")
+    @POST("events/{eventId}/planning/task_list")
     suspend fun createTaskList(
         @Path("eventId") eventId: String,
         @Body request: CreateTaskListRequest

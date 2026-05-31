@@ -62,13 +62,11 @@ fun EventScreen(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Box(modifier = Modifier.size(36.dp)) {
-                                val avatarUrl = event?.let { "${Constants.BASE_URL}/event-avatars/${it.eventId}" }
                                 AsyncImage(
-                                    model = avatarUrl,
+                                    model = "${Constants.BASE_URL}/event-avatars/${event?.eventId}?t=${System.currentTimeMillis()}",
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize().clip(CircleShape),
-                                    contentScale = ContentScale.Crop,
-                                    error = painterResource(R.drawable.ic_default_event_avatar)
+                                    contentScale = ContentScale.Crop
                                 )
                             }
                             Spacer(modifier = Modifier.width(8.dp))

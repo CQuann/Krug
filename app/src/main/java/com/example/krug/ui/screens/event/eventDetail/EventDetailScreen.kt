@@ -106,7 +106,7 @@ fun EventDetailScreen(
             is RequestState.Error -> Box(
                 Modifier.fillMaxSize().padding(padding),
                 contentAlignment = Alignment.Center
-            ) { Text("Ошибка: ${(requestState as RequestState.Error).message}", color = MaterialTheme.colorScheme.error) }
+            ) { Text("Ошибка: ${requestState.message}", color = MaterialTheme.colorScheme.error) }
             RequestState.Idle, RequestState.Success -> {
                 val event = detailedEvent?.event
                 Column(
@@ -119,7 +119,7 @@ fun EventDetailScreen(
                 ) {
                     // Аватар события
                     event?.eventId?.let {
-                        val avatarUrl = "${Constants.BASE_URL}/event-avatars/$it"
+                        val avatarUrl = "${Constants.BASE_URL}/event-avatars/$it?t=${System.currentTimeMillis()}"
                         Box(modifier = Modifier.size(120.dp)) {
                             AsyncImage(
                                 model = avatarUrl,

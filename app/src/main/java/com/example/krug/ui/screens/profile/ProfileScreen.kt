@@ -1,6 +1,5 @@
 package com.example.krug.ui.screens.profile
 
-import android.net.Uri
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
@@ -20,12 +19,10 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
 import coil.compose.AsyncImage
 import com.example.krug.R
 import com.example.krug.data.model.RequestState
 import com.example.krug.data.model.auth.UserData
-import com.example.krug.ui.components.AvatarPicker
 import com.example.krug.ui.components.DateTimePickerField
 import com.example.krug.ui.theme.KrugTheme
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -55,13 +52,12 @@ fun ProfileScreen(
     onUpdateUsername: (String) -> Unit,
     onUpdateBirthday: (String) -> Unit,
     onUpdateDescription: (String) -> Unit,
-    onUploadAvatar: (Uri) -> Unit,
+    onChangePhotoClick: () -> Unit,
     onSaveProfile: () -> Unit,
     onLogout: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-    var showAvatarDialog by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         events.collect { event ->
@@ -87,7 +83,7 @@ fun ProfileScreen(
                         IconButton(onClick = onEnterEditMode) {
                             Icon(Icons.Default.Edit, contentDescription = "Редактировать")
                         }
-                        IconButton(onClick = { showAvatarDialog = true }) {
+                        IconButton(onClick = onChangePhotoClick) {
                             Icon(Icons.Default.AddAPhoto, contentDescription = "Изменить аватар")
                         }
                     }
@@ -100,92 +96,93 @@ fun ProfileScreen(
                 CircularProgressIndicator()
             }
         } else {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(padding)
-                    .verticalScroll(rememberScrollState())
-                    .padding(16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally
-            ) {
-                // Аватар
-                Box(modifier = Modifier.size(120.dp), contentAlignment = Alignment.Center) {
-                    if (avatarUrl != null) {
-                        AsyncImage(
-                            model = avatarUrl,
-                            contentDescription = "Аватар",
-                            contentScale = ContentScale.Crop,
-                            modifier = Modifier.size(120.dp).clip(CircleShape),
-                            error = painterResource(R.drawable.ic_default_avatar)
+            Column(modifier = Modifier.fillMaxSize().padding(padding)) {
+                // Прокручиваемое содержимое
+                Column(
+                    modifier = Modifier
+                        .weight(1f)
+                        .verticalScroll(rememberScrollState())
+                        .padding(16.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    // Аватар (только в режиме просмотра)
+                    if (!isEditing) {
+                        Box(modifier = Modifier.size(120.dp), contentAlignment = Alignment.Center) {
+                            if (avatarUrl != null) {
+                                AsyncImage(
+                                    model = avatarUrl,
+                                    contentDescription = "Аватар",
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier.size(120.dp).clip(CircleShape),
+                                    error = painterResource(R.drawable.ic_default_avatar)
+                                )
+                            } else {
+                                Icon(
+                                    Icons.Default.Person,
+                                    contentDescription = null,
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.size(120.dp)
+                                )
+                            }
+                        }
+                        Spacer(Modifier.height(24.dp))
+                    }
+
+                    ProfileField("Никнейм", username, isEditing, onUpdateUsername, Icons.Default.AlternateEmail, usernameError != null) {
+                        when {
+                            usernameError != null -> Text(usernameError!!)
+                            isCheckingUsername -> Text("Проверка...", color = MaterialTheme.colorScheme.onSurfaceVariant)
+                            usernameAvailable == true && isEditing -> Text("Доступен")
+                            usernameAvailable == false && isEditing -> Text("Занят")
+                        }
+                    }
+                    ProfileField("Имя", displayName, isEditing, onUpdateDisplayName, Icons.Default.Person)
+                    if (!isEditing) ProfileField("Электронная почта", email, false, {}, Icons.Default.Email)
+
+                    Box(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                        DateTimePickerField(
+                            label = "Дата рождения",
+                            date = if (birthday.isNotBlank()) LocalDate.parse(birthday) else null,
+                            time = null,
+                            onDateSelected = { date -> onUpdateBirthday(date?.toString() ?: "") },
+                            onTimeSelected = {},
+                            enableTime = false,
+                            enabled = isEditing,
+                            modifier = Modifier.fillMaxWidth()
                         )
-                    } else {
-                        Icon(
-                            Icons.Default.Person,
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(120.dp)
+                    }
+
+                    Box(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
+                        OutlinedTextField(
+                            value = if (isEditing) description else description.ifEmpty { "Не указано" },
+                            onValueChange = onUpdateDescription,
+                            label = { Text("О себе") },
+                            enabled = isEditing,
+                            readOnly = !isEditing,
+                            maxLines = 6,
+                            trailingIcon = { Icon(Icons.Default.Info, contentDescription = null) },
+                            colors = outlineTextFieldColors(),
+                            modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp)
                         )
                     }
                 }
-
-                Spacer(Modifier.height(24.dp))
-
-                // Все поля идут с одинаковым отступом 12.dp, достигается за счёт Spacer в конце каждого компонента
-                ProfileField("Никнейм", username, isEditing, onUpdateUsername, Icons.Default.AlternateEmail, usernameError != null) {
-                    when {
-                        usernameError != null -> Text(usernameError!!)
-                        isCheckingUsername -> Text("Проверка...", color = MaterialTheme.colorScheme.onSurfaceVariant)
-                        usernameAvailable == true && isEditing -> Text("Доступен")
-                        usernameAvailable == false && isEditing -> Text("Занят")
-                    }
-                }
-                ProfileField("Имя", displayName, isEditing, onUpdateDisplayName, Icons.Default.Person)
-                if (!isEditing) ProfileField("Электронная почта", email, false, {}, Icons.Default.Email)
-
-                // Оборачиваем DateTimePickerField и описание в Box с нижним отступом, чтобы сохранить единый стиль
-                Box(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                    DateTimePickerField(
-                        label = "Дата рождения",
-                        date = if (birthday.isNotBlank()) LocalDate.parse(birthday) else null,
-                        time = null,
-                        onDateSelected = { date -> onUpdateBirthday(date?.toString() ?: "") },
-                        onTimeSelected = {},
-                        enableTime = false,
-                        enabled = isEditing,
-                        modifier = Modifier.fillMaxWidth()
-                    )
-                }
-
-                Box(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
-                    OutlinedTextField(
-                        value = if (isEditing) description else description.ifEmpty { "Не указано" },
-                        onValueChange = onUpdateDescription,
-                        label = { Text("О себе") },
-                        enabled = isEditing,
-                        readOnly = !isEditing,
-                        maxLines = 6,
-                        trailingIcon = { Icon(Icons.Default.Info, contentDescription = null) },
-                        colors = outlineTextFieldColors(),
-                        modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp)
-                    )
-                }
-
-                Spacer(Modifier.height(24.dp))
 
                 // Кнопки действий
                 if (isEditing) {
                     Button(
                         onClick = onSaveProfile,
                         enabled = requestState !is RequestState.Loading && usernameError == null && usernameAvailable == true,
-                        modifier = Modifier.fillMaxWidth().height(52.dp),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         shape = MaterialTheme.shapes.medium
                     ) { Text("Сохранить") }
-                    Spacer(Modifier.height(8.dp))
-                    TextButton(onClick = onCancelEdit, modifier = Modifier.fillMaxWidth()) { Text("Отмена") }
                 } else {
                     OutlinedButton(
                         onClick = onLogout,
-                        modifier = Modifier.fillMaxWidth(),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
                     ) { Text("Выйти из аккаунта", fontWeight = FontWeight.Medium) }
@@ -193,43 +190,11 @@ fun ProfileScreen(
 
                 if (requestState is RequestState.Error) {
                     Spacer(Modifier.height(8.dp))
-                    Text(requestState.message, color = MaterialTheme.colorScheme.error)
-                }
-            }
-        }
-    }
-
-    // Диалог выбора аватара – теперь с правильной версткой
-    if (showAvatarDialog) {
-        var selectedUri by remember { mutableStateOf<Uri?>(null) }
-        Dialog(
-            onDismissRequest = { showAvatarDialog = false }
-        ) {
-            Surface(
-                shape = MaterialTheme.shapes.large,
-                tonalElevation = 8.dp
-            ) {
-                Column(
-                    modifier = Modifier.padding(24.dp),
-                    horizontalAlignment = Alignment.CenterHorizontally
-                ) {
-                    Text("Выберите фото", style = MaterialTheme.typography.headlineSmall)
-                    Spacer(Modifier.height(24.dp))
-                    AvatarPicker(
-                        currentAvatarUri = selectedUri,
-                        onAvatarUriChanged = { selectedUri = it }
+                    Text(
+                        text = requestState.message,
+                        color = MaterialTheme.colorScheme.error,
+                        modifier = Modifier.padding(horizontal = 16.dp)
                     )
-                    Spacer(Modifier.height(24.dp))
-                    Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        TextButton(onClick = { showAvatarDialog = false }) { Text("Отмена") }
-                        Button(
-                            onClick = {
-                                selectedUri?.let { onUploadAvatar(it) }
-                                showAvatarDialog = false
-                            },
-                            enabled = selectedUri != null
-                        ) { Text("Загрузить") }
-                    }
                 }
             }
         }
@@ -270,7 +235,7 @@ private fun outlineTextFieldColors() = OutlinedTextFieldDefaults.colors(
     errorBorderColor = MaterialTheme.colorScheme.error,
 )
 
-
+// Превью без изменений
 @Preview(showBackground = true, name = "Профиль – обычный вид")
 @Composable
 fun ProfileScreenNormalPreview() {
@@ -297,7 +262,7 @@ fun ProfileScreenNormalPreview() {
             onUpdateUsername = {},
             onUpdateBirthday = {},
             onUpdateDescription = {},
-            onUploadAvatar = {},
+            onChangePhotoClick = {},
             onSaveProfile = {},
             onLogout = {},
             onNavigateToLogin = {}
@@ -331,7 +296,7 @@ fun ProfileScreenEmptyFieldsPreview() {
             onUpdateUsername = {},
             onUpdateBirthday = {},
             onUpdateDescription = {},
-            onUploadAvatar = {},
+            onChangePhotoClick = {},
             onSaveProfile = {},
             onLogout = {},
             onNavigateToLogin = {}
@@ -365,7 +330,7 @@ fun ProfileScreenEditingPreview() {
             onUpdateUsername = {},
             onUpdateBirthday = {},
             onUpdateDescription = {},
-            onUploadAvatar = {},
+            onChangePhotoClick = {},
             onSaveProfile = {},
             onLogout = {},
             onNavigateToLogin = {}

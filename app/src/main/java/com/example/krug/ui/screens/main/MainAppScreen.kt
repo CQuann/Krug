@@ -82,6 +82,7 @@ fun MainAppScreen(
                     Box(
                         modifier = Modifier
                             .size(40.dp)
+                            .clip(CircleShape)
                             .clickable { onEditProfileClick() }
                     ) {
                         if (avatarUrl != null) {
@@ -96,7 +97,7 @@ fun MainAppScreen(
                                 Icons.Default.Person,
                                 contentDescription = "Аватар",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.fillMaxSize()
+                                modifier = Modifier.fillMaxSize().clip(CircleShape)
                             )
                         }
                     }

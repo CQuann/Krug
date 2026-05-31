@@ -19,7 +19,13 @@ sealed class Screen(val route: String) {
         fun passArgs(eventId: String) = "event_avatar_upload/$eventId"
     }
 
+    object EventCreateAvatarUpload : Screen("event_create_avatar_upload/{eventId}") {
+        fun passArgs(eventId: String) = "event_create_avatar_upload/$eventId"
+    }
+
     object Profile : Screen("profile")
+    object ProfilePhotoUpload : Screen("profile_photo_upload")
+
     object EventScreen : Screen("event_screen/{eventId}") {
         fun passArgs(eventId: String) = "event_screen/$eventId"
     }
@@ -27,8 +33,6 @@ sealed class Screen(val route: String) {
     object EventDetail : Screen("event_detail/{eventId}") {
         fun passArgs(eventId: String) = "event_detail/$eventId"
     }
-
-    object EditProfile : Screen("edit_profile")
     object EditEvent : Screen("edit_event/{eventId}") {
         fun passArgs(eventId: String) = "edit_event/$eventId"
     }

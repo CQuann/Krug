@@ -55,7 +55,7 @@ fun EventCard(event: Event, onClick: () -> Unit) {
             // Аватар события
             Box(modifier = Modifier.size(48.dp)) {
                 AsyncImage(
-                    model = "${Constants.BASE_URL}/event-avatars/${event.eventId}",
+                    model = "${Constants.BASE_URL}/event-avatars/${event.eventId}?t=${System.currentTimeMillis()}",
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()

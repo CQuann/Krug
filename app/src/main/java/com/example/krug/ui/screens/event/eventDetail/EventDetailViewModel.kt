@@ -71,7 +71,7 @@ class EventDetailViewModel @Inject constructor(
     }
 
     private fun applyPermissions(perms: String) {
-        val isCreator = perms.length > 0 && perms[0] == '1'
+        val isCreator = perms.isNotEmpty() && perms[0] == '1'
         val isAdmin   = perms.length > 1 && perms[1] == '1'
 
         _canEdit.value = isCreator || isAdmin

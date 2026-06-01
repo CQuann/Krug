@@ -20,7 +20,8 @@ import javax.inject.Singleton
 @Singleton
 class RetrofitEventRepository @Inject constructor(
     private val eventApi: EventApi,
-    @ApplicationContext private val context: Context
+    private val sessionManager: SessionManager,
+        @ApplicationContext private val context: Context
 ) : EventRepository {
 
     private val gson = Gson()
@@ -141,11 +142,10 @@ class RetrofitEventRepository @Inject constructor(
         }
     }
 
-    override suspend fun joinEvent(inviteToken: String): DataResult<Unit> {
+    override suspend fun joinEvent(inviteToken: String): DataResult<Event> {
         return try {
             val response = eventApi.joinEvent(JoinEventRequest(inviteToken))
-            if (response.success) DataResult.Success(Unit)
-            else DataResult.Error(response.error ?: "Неизвестная ошибка")
+            DataResult.Success(response)
         } catch (e: Exception) {
             DataResult.Error(parseErrorMessage(e))
         }

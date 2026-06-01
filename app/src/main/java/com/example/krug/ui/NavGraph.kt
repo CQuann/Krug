@@ -91,7 +91,9 @@ fun SetupNavGraph() {
         composable(
             route = Screen.VerifyCode.route,
             arguments = listOf(navArgument("email") { type = NavType.StringType })
-        ) { backStackEntry ->
+        )
+        {
+            backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
             val viewModel: VerifyCodeViewModel = hiltViewModel()
             val requestState by viewModel.requestState.collectAsStateWithLifecycle()
@@ -126,7 +128,9 @@ fun SetupNavGraph() {
         composable(
             route = Screen.RegisterProfile.route,
             arguments = listOf(navArgument("email") { type = NavType.StringType })
-        ) { backStackEntry ->
+        )
+        {
+            backStackEntry ->
             val email = backStackEntry.arguments?.getString("email") ?: ""
             val viewModel: RegisterProfileViewModel = hiltViewModel()
             val requestState by viewModel.requestState.collectAsStateWithLifecycle()
@@ -169,7 +173,7 @@ fun SetupNavGraph() {
             )
         }
 
-        // Uploading user's avatar
+        // Uploading user's avatar (registration)
         composable(Screen.AvatarUpload.route) {
             val viewModel: AvatarUploadViewModel = hiltViewModel()
             val requestState by viewModel.requestState.collectAsStateWithLifecycle()
@@ -194,6 +198,119 @@ fun SetupNavGraph() {
                 onSetAvatarUri = { viewModel.setAvatarUri(it) },
                 onUploadClick = { viewModel.uploadAvatar() },
                 onSkipClick = { viewModel.skipAvatar() }
+            )
+        }
+
+        // Main screen
+        composable(Screen.MainApp.route) {
+            val viewModel: MainAppViewModel = hiltViewModel()
+            val userId by viewModel.userId.collectAsStateWithLifecycle()
+            val events by viewModel.events.collectAsStateWithLifecycle()
+            val currentStatus by viewModel.currentStatus.collectAsStateWithLifecycle()
+            val totalEvents by viewModel.totalEvents.collectAsStateWithLifecycle()
+            val isLoadingMore by viewModel.isLoadingMore.collectAsStateWithLifecycle()
+            val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
+            val error by viewModel.error.collectAsStateWithLifecycle()
+            val showJoinDialog by viewModel.showJoinDialog.collectAsStateWithLifecycle()
+            val pendingJoinEvent by viewModel.pendingJoinEvent.collectAsStateWithLifecycle()
+
+            MainAppScreen(
+                userId = userId,
+                events = events,
+                currentStatus = currentStatus,
+                totalEvents = totalEvents,
+                isLoadingMore = isLoadingMore,
+                isRefreshing = isRefreshing,
+                error = error,
+                onEditProfileClick = { navController.navigate(Screen.Profile.route) },
+                onStatusChange = { viewModel.onStatusChange(it) },
+                onEventClick = { eventId -> navController.navigate(Screen.EventScreen.passArgs(eventId)) },
+                onLoadMore = { viewModel.loadMoreEvents() },
+                onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) },
+                onRefresh = { viewModel.onRefresh() },
+                showJoinDialog = showJoinDialog,
+                pendingJoinEvent = pendingJoinEvent,
+                onDismissJoinDialog = { viewModel.dismissJoinDialog() },
+                onNavigateToJoinedEvent = { eventId ->
+                    viewModel.navigateToJoinedEvent()
+                    navController.navigate(Screen.EventScreen.passArgs(eventId))
+                }
+            )
+        }
+
+        // Profile screen
+        composable(Screen.Profile.route) {
+            val viewModel: ProfileViewModel = hiltViewModel()
+            val userData by viewModel.userData.collectAsStateWithLifecycle()
+            val isEditing by viewModel.isEditing.collectAsStateWithLifecycle()
+            val displayName by viewModel.displayName.collectAsStateWithLifecycle()
+            val username by viewModel.username.collectAsStateWithLifecycle()
+            val email by viewModel.email.collectAsStateWithLifecycle()
+            val birthday by viewModel.birthday.collectAsStateWithLifecycle()
+            val description by viewModel.description.collectAsStateWithLifecycle()
+            val avatarUrl by viewModel.avatarUrl.collectAsStateWithLifecycle()
+            val usernameAvailable by viewModel.usernameAvailable.collectAsStateWithLifecycle()
+            val isCheckingUsername by viewModel.isCheckingUsername.collectAsStateWithLifecycle()
+            val usernameError by viewModel.usernameError.collectAsStateWithLifecycle()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
+
+            ProfileScreen(
+                userData = userData,
+                isEditing = isEditing,
+                displayName = displayName,
+                username = username,
+                email = email,
+                birthday = birthday,
+                description = description,
+                avatarUrl = avatarUrl,
+                usernameAvailable = usernameAvailable,
+                isCheckingUsername = isCheckingUsername,
+                usernameError = usernameError,
+                requestState = requestState,
+                events = viewModel.events,
+                onBackClick = { navController.popBackStack() },
+                onEnterEditMode = { viewModel.enterEditMode() },
+                onCancelEdit = { viewModel.cancelEditMode() },
+                onUpdateDisplayName = { viewModel.updateDisplayName(it) },
+                onUpdateUsername = { viewModel.updateUsername(it) },
+                onUpdateBirthday = { viewModel.updateBirthday(it) },
+                onUpdateDescription = { viewModel.updateDescription(it) },
+                onChangePhotoClick = { navController.navigate(Screen.ProfilePhotoUpload.route) },
+                onSaveProfile = { viewModel.saveProfile() },
+                onLogout = { viewModel.logout() },
+                onNavigateToLogin = {
+                    navController.navigate(Screen.LoginEmail.route) {
+                        popUpTo(Screen.Splash.route) { inclusive = true }
+                    }
+                }
+            )
+        }
+
+        // Uploading user's avatar (profile)
+        composable(Screen.ProfilePhotoUpload.route) {
+            val viewModel: AvatarUploadViewModel = hiltViewModel()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
+            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
+            val profileViewModel: ProfileViewModel = hiltViewModel(navController.previousBackStackEntry!!)
+
+            LaunchedEffect(Unit) {
+                viewModel.navigationEvents.collect {
+                    profileViewModel.loadUser()
+                    navController.popBackStack()
+                }
+            }
+
+            PhotoUploadScreen(
+                title = "Изменить фото профиля",
+                currentUri = avatarUri,
+                requestState = requestState,
+                snackbarEvents = viewModel.snackbarEvents,
+                shape = CircleShape,
+                uploadButtonText = "Загрузить",
+                showBackButton = true,
+                onSetAvatarUri = { viewModel.setAvatarUri(it) },
+                onUploadClick = { viewModel.uploadAvatar() },
+                onBackClick = { navController.popBackStack() }
             )
         }
 
@@ -261,112 +378,13 @@ fun SetupNavGraph() {
             )
         }
 
-        // Uploading event's avatar (detail)
-        composable(
-            route = Screen.EventAvatarUpload.route,
-            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) { _ ->
-            val viewModel: EventAvatarUploadViewModel = hiltViewModel()
-            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
-            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
-            val detailViewModel: EventDetailViewModel = hiltViewModel(
-                viewModelStoreOwner = navController.previousBackStackEntry!!
-            )
-
-            LaunchedEffect(Unit) {
-                viewModel.navigationEvents.collect {
-                    detailViewModel.loadEvent()
-                    navController.popBackStack()
-                }
-            }
-
-            PhotoUploadScreen(
-                title = "Добавьте фото события",
-                currentUri = avatarUri,
-                requestState = requestState,
-                snackbarEvents = viewModel.snackbarEvents,
-                shape = RoundedCornerShape(16.dp),
-                uploadButtonText = "Загрузить",
-                showSkipButton = true,
-                onSetAvatarUri = { viewModel.setAvatarUri(it) },
-                onUploadClick = { viewModel.uploadAvatar() },
-                onSkipClick = { viewModel.skip() }
-            )
-        }
-
-        // Uploading event's avatar
-        composable(
-            route = Screen.EventAvatarUpload.route,
-            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) { _ ->
-            val viewModel: EventAvatarUploadViewModel = hiltViewModel()
-            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
-            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
-
-            val detailViewModel: EventDetailViewModel = hiltViewModel(
-                viewModelStoreOwner = navController.previousBackStackEntry!!
-            )
-
-            LaunchedEffect(Unit) {
-                viewModel.navigationEvents.collect {
-                    detailViewModel.loadEvent()
-                    navController.popBackStack()
-                }
-            }
-
-            PhotoUploadScreen(
-                title = "Добавьте фото события",
-                currentUri = avatarUri,
-                requestState = requestState,
-                snackbarEvents = viewModel.snackbarEvents,
-                shape = RoundedCornerShape(16.dp),
-                uploadButtonText = "Загрузить",
-                showSkipButton = true,
-                onSetAvatarUri = { viewModel.setAvatarUri(it) },
-                onUploadClick = { viewModel.uploadAvatar() },
-                onSkipClick = { viewModel.skip() }
-            )
-        }
-
-        // Main screen
-        composable(Screen.MainApp.route) {
-            val viewModel: MainAppViewModel = hiltViewModel()
-            val userId by viewModel.userId.collectAsStateWithLifecycle()
-            val events by viewModel.events.collectAsStateWithLifecycle()
-            val currentStatus by viewModel.currentStatus.collectAsStateWithLifecycle()
-            val totalEvents by viewModel.totalEvents.collectAsStateWithLifecycle()
-            val isLoadingMore by viewModel.isLoadingMore.collectAsStateWithLifecycle()
-            val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
-            val error by viewModel.error.collectAsStateWithLifecycle()
-            val showJoinDialog by viewModel.showJoinDialog.collectAsStateWithLifecycle()
-            val pendingJoinEvent by viewModel.pendingJoinEvent.collectAsStateWithLifecycle()
-
-            MainAppScreen(
-                userId = userId,
-                events = events,
-                currentStatus = currentStatus,
-                totalEvents = totalEvents,
-                isLoadingMore = isLoadingMore,
-                isRefreshing = isRefreshing,
-                error = error,
-                onEditProfileClick = { navController.navigate(Screen.Profile.route) },
-                onStatusChange = { viewModel.onStatusChange(it) },
-                onEventClick = { eventId -> navController.navigate(Screen.EventScreen.passArgs(eventId)) },
-                onLoadMore = { viewModel.loadMoreEvents() },
-                onCreateEventClick = { navController.navigate(Screen.CreateEvent.route) },
-                onRefresh = { viewModel.onRefresh() },
-                showJoinDialog = showJoinDialog,
-                pendingJoinEvent = pendingJoinEvent,
-                onDismissJoinDialog = { viewModel.dismissJoinDialog() },
-                onNavigateToJoinedEvent = { eventId -> navController.navigate(Screen.EventScreen.passArgs(eventId))}
-            )
-        }
-
         // Event screen (tabs: чат, планирование, альбом)
         composable(
             route = Screen.EventScreen.route,
             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) { _ ->
+        )
+        {
+                _ ->
             val viewModel: EventViewModel = hiltViewModel()
             val event by viewModel.event.collectAsStateWithLifecycle()
             val requestState by viewModel.requestState.collectAsStateWithLifecycle()
@@ -387,7 +405,9 @@ fun SetupNavGraph() {
         composable(
             route = Screen.EventDetail.route,
             arguments = listOf(navArgument("eventId") { type = NavType.StringType })
-        ) { _ ->
+        )
+        {
+                _ ->
             val viewModel: EventDetailViewModel = hiltViewModel()
             val detailedEvent by viewModel.detailedEvent.collectAsStateWithLifecycle()
             val requestState by viewModel.requestState.collectAsStateWithLifecycle()
@@ -437,6 +457,39 @@ fun SetupNavGraph() {
                 onConfirmDelete = { viewModel.onConfirmDelete() },
                 onRemoveMemberClick = { userId -> viewModel.removeMember(userId) },
                 onToggleAdminClick = { member -> viewModel.toggleAdmin(member) }
+            )
+        }
+
+        // Uploading event's avatar (detail)
+        composable(
+            route = Screen.EventAvatarUpload.route,
+            arguments = listOf(navArgument("eventId") { type = NavType.StringType })
+        ) { _ ->
+            val viewModel: EventAvatarUploadViewModel = hiltViewModel()
+            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
+            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
+            val detailViewModel: EventDetailViewModel = hiltViewModel(
+                viewModelStoreOwner = navController.previousBackStackEntry!!
+            )
+
+            LaunchedEffect(Unit) {
+                viewModel.navigationEvents.collect {
+                    detailViewModel.loadEvent()
+                    navController.popBackStack()
+                }
+            }
+
+            PhotoUploadScreen(
+                title = "Добавьте фотографию",
+                currentUri = avatarUri,
+                requestState = requestState,
+                snackbarEvents = viewModel.snackbarEvents,
+                shape = RoundedCornerShape(16.dp),
+                uploadButtonText = "Загрузить",
+                showBackButton = true,
+                onSetAvatarUri = { viewModel.setAvatarUri(it) },
+                onUploadClick = { viewModel.uploadAvatar() },
+                onSkipClick = { viewModel.skip() }
             )
         }
 
@@ -495,81 +548,6 @@ fun SetupNavGraph() {
                 onEndTimeChange = { viewModel.updateEndTime(it) },
                 onColorChange = { viewModel.updateColor(it) },
                 onSaveClick = { viewModel.updateEvent() }
-            )
-        }
-
-        // Profile screen
-        composable(Screen.Profile.route) {
-            val viewModel: ProfileViewModel = hiltViewModel()
-            val userData by viewModel.userData.collectAsStateWithLifecycle()
-            val isEditing by viewModel.isEditing.collectAsStateWithLifecycle()
-            val displayName by viewModel.displayName.collectAsStateWithLifecycle()
-            val username by viewModel.username.collectAsStateWithLifecycle()
-            val email by viewModel.email.collectAsStateWithLifecycle()
-            val birthday by viewModel.birthday.collectAsStateWithLifecycle()
-            val description by viewModel.description.collectAsStateWithLifecycle()
-            val avatarUrl by viewModel.avatarUrl.collectAsStateWithLifecycle()
-            val usernameAvailable by viewModel.usernameAvailable.collectAsStateWithLifecycle()
-            val isCheckingUsername by viewModel.isCheckingUsername.collectAsStateWithLifecycle()
-            val usernameError by viewModel.usernameError.collectAsStateWithLifecycle()
-            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
-
-            ProfileScreen(
-                userData = userData,
-                isEditing = isEditing,
-                displayName = displayName,
-                username = username,
-                email = email,
-                birthday = birthday,
-                description = description,
-                avatarUrl = avatarUrl,
-                usernameAvailable = usernameAvailable,
-                isCheckingUsername = isCheckingUsername,
-                usernameError = usernameError,
-                requestState = requestState,
-                events = viewModel.events,
-                onBackClick = { navController.popBackStack() },
-                onEnterEditMode = { viewModel.enterEditMode() },
-                onCancelEdit = { viewModel.cancelEditMode() },
-                onUpdateDisplayName = { viewModel.updateDisplayName(it) },
-                onUpdateUsername = { viewModel.updateUsername(it) },
-                onUpdateBirthday = { viewModel.updateBirthday(it) },
-                onUpdateDescription = { viewModel.updateDescription(it) },
-                onChangePhotoClick = { navController.navigate(Screen.ProfilePhotoUpload.route) },
-                onSaveProfile = { viewModel.saveProfile() },
-                onLogout = { viewModel.logout() },
-                onNavigateToLogin = {
-                    navController.navigate(Screen.LoginEmail.route) {
-                        popUpTo(Screen.Splash.route) { inclusive = true }
-                    }
-                }
-            )
-        }
-
-        composable(Screen.ProfilePhotoUpload.route) {
-            val viewModel: AvatarUploadViewModel = hiltViewModel()
-            val requestState by viewModel.requestState.collectAsStateWithLifecycle()
-            val avatarUri by viewModel.avatarUri.collectAsStateWithLifecycle()
-            val profileViewModel: ProfileViewModel = hiltViewModel(navController.previousBackStackEntry!!)
-
-            LaunchedEffect(Unit) {
-                viewModel.navigationEvents.collect {
-                    profileViewModel.loadUser()
-                    navController.popBackStack()
-                }
-            }
-
-            PhotoUploadScreen(
-                title = "Изменить фото профиля",
-                currentUri = avatarUri,
-                requestState = requestState,
-                snackbarEvents = viewModel.snackbarEvents,
-                shape = CircleShape,
-                uploadButtonText = "Загрузить",
-                showBackButton = true,
-                onSetAvatarUri = { viewModel.setAvatarUri(it) },
-                onUploadClick = { viewModel.uploadAvatar() },
-                onBackClick = { navController.popBackStack() }
             )
         }
     }

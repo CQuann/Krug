@@ -56,5 +56,5 @@ interface EventApi {
     ): ApiResponse
 
     @POST("events/join")
-    suspend fun joinEvent(@Body request: JoinEventRequest): ApiResponse
+    suspend fun joinEvent(@Body request: JoinEventRequest): Event
 }

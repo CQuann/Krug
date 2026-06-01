@@ -30,7 +30,7 @@ interface PlanningApi {
     ): PlanningModule
 
     // Голосование в опросе
-    @POST("events/{eventId}/planning/poll/{pollId}/vote")
+    @PATCH("events/{eventId}/planning/poll/{pollId}/vote")
     suspend fun votePoll(
         @Path("eventId") eventId: String,
         @Path("pollId") pollId: String,
@@ -38,7 +38,7 @@ interface PlanningApi {
     ): ApiResponse
 
     // Бронирование / отказ от бронирования (вещи и задачи)
-    @POST("events/{eventId}/planning/{type}/{moduleId}/items/{itemId}/assign")
+    @PATCH("events/{eventId}/planning/{type}/{moduleId}/items/{itemId}/assign")
     suspend fun assignItem(
         @Path("eventId") eventId: String,
         @Path("type") type: String,        // "items" или "tasks"
@@ -48,7 +48,7 @@ interface PlanningApi {
     ): ApiResponse
 
     // Отметка о выполнении задачи
-    @POST("events/{eventId}/planning/tasks/{moduleId}/items/{itemId}/complete")
+    @PATCH("events/{eventId}/planning/tasks/{moduleId}/items/{itemId}/complete")
     suspend fun completeTask(
         @Path("eventId") eventId: String,
         @Path("moduleId") moduleId: String,

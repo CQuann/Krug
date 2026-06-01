@@ -26,7 +26,6 @@ import coil.compose.AsyncImage
 import com.example.krug.R
 import com.example.krug.data.model.event.Event
 import com.example.krug.ui.theme.KrugTheme
-import com.example.krug.utils.AvatarUrlProvider
 import kotlinx.coroutines.launch
 import androidx.core.graphics.toColorInt
 import com.example.krug.utils.Constants

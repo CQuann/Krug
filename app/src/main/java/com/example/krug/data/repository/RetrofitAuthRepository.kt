@@ -21,6 +21,7 @@ import javax.inject.Singleton
 @Singleton
 class RetrofitAuthRepository @Inject constructor(
     private val authApi: AuthApi,
+    private val sessionManager: SessionManager,
     @ApplicationContext private val context: Context
 ) : AuthRepository {
 

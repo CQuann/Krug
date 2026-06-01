@@ -14,5 +14,5 @@ interface EventRepository {
     suspend fun uploadEventAvatar(eventId: String, uri: Uri): DataResult<Unit>
     suspend fun removeMember(eventId: String, userId: String): DataResult<Unit>
     suspend fun updateMemberPermissions(eventId: String, userId: String, permissions: String): DataResult<Unit>
-    suspend fun joinEvent(inviteToken: String): DataResult<Unit>
+    suspend fun joinEvent(inviteToken: String): DataResult<Event>
 }

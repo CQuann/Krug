@@ -6,7 +6,6 @@ import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.event.Event
-import com.example.krug.data.repository.AuthRepository
 import com.example.krug.data.repository.EventRepository
 import com.example.krug.di.InviteTokenHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -16,7 +15,6 @@ import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
-// ui/screens/main/MainAppViewModel.kt
 @HiltViewModel
 class MainAppViewModel @Inject constructor(
     private val eventRepository: EventRepository,
@@ -53,57 +51,57 @@ class MainAppViewModel @Inject constructor(
 
     private val _pendingJoinEvent = MutableStateFlow<Event?>(null)
     val pendingJoinEvent: StateFlow<Event?> = _pendingJoinEvent.asStateFlow()
+    private val _isJoining = MutableStateFlow(false)
+
 
     init {
         viewModelScope.launch {
             _userId.value = sessionManager.getUserId()
             loadEvents(reset = true)
             processPendingInvite()
+            launch {
+                inviteTokenHolder.tokenFlow.collect { token ->
+                    if (_userId.value != null) {
+                        joinEvent(token)
+                    }
+                }
+            }
         }
     }
 
     fun processPendingInvite() {
-        val token = inviteTokenHolder.getAndClearToken()
-        Log.d("InviteDebug", "processPendingInvite, token: $token")
-        if (token != null) {
-            joinEvent(token)
+        if (_userId.value != null) {
+            val token = inviteTokenHolder.getAndClearToken()
+            Log.d("InviteDebug", "processPendingInvite, token: $token")
+            if (token != null) {
+                joinEvent(token)
+            }
         }
     }
 
-//    private fun joinEvent(inviteToken: String) {
-//        viewModelScope.launch {
-//            _isRefreshing.value = true
-//            when (val result = eventRepository.joinEvent(inviteToken)) {
-//                is DataResult.Success -> {
-//                    _showJoinDialog.value = true
-//                    loadEvents(reset = true)
-//                }
-//                is DataResult.Error -> {
-//                    _error.value = result.message
-//                    _isRefreshing.value = false
-//                }
-//            }
-//        }
-//    }
-
     private fun joinEvent(inviteToken: String) {
-        Log.d("InviteDebug", "Получен токен приглашения: $inviteToken")
-        _showJoinDialog.value = true
-        _pendingJoinEvent.value = Event(
-            eventId = "debug_event",
-            title = "Тестовое событие (заглушка)",
-            location = null,
-            startDateTime = null,
-            endDateTime = null,
-            color = "#FF5733",
-            status = "active",
-            description = "Событие создано для отладки приглашений"
-        )
+        if (_isJoining.value) return
+        _isJoining.value = true
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            when (val result = eventRepository.joinEvent(inviteToken)) {
+                is DataResult.Success -> {
+                    _pendingJoinEvent.value = result.data
+                    _showJoinDialog.value = true
+                    loadEvents(reset = true)
+                }
+                is DataResult.Error -> {
+                    _error.value = result.message
+                }
+            }
+            _isRefreshing.value = false
+            _isJoining.value = false
+        }
     }
 
     fun dismissJoinDialog() { _showJoinDialog.value = false }
 
-    fun navigateToJoinedEvent(eventId: String) {
+    fun navigateToJoinedEvent() {
         _showJoinDialog.value = false
     }
 

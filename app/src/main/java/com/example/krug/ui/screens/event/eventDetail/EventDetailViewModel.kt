@@ -144,7 +144,7 @@ class EventDetailViewModel @Inject constructor(
         }
         viewModelScope.launch {
             _requestState.value = RequestState.Loading
-            val perms = member.permissions ?: "000"
+            val perms = member.permissions
             val newPerms = StringBuilder(perms.padEnd(3, '0'))
             val isAdmin = newPerms[1] == '1'
             newPerms.setCharAt(1, if (isAdmin) '0' else '1')

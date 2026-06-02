@@ -2,43 +2,23 @@ package com.example.krug.data.repository
 
 import android.content.Context
 import android.net.Uri
-import com.example.krug.data.local.SessionManager
-import com.example.krug.data.model.ApiResponse
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.event.*
 import com.example.krug.data.network.EventApi
 import com.example.krug.utils.ImageUtils
-import com.google.gson.Gson
+import com.example.krug.utils.NetworkUtils.parseErrorMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
 import okhttp3.MediaType.Companion.toMediaTypeOrNull
 import okhttp3.MultipartBody
 import okhttp3.RequestBody.Companion.asRequestBody
-import retrofit2.HttpException
 import javax.inject.Inject
 import javax.inject.Singleton
 
 @Singleton
 class RetrofitEventRepository @Inject constructor(
     private val eventApi: EventApi,
-    private val sessionManager: SessionManager,
-        @ApplicationContext private val context: Context
+    @ApplicationContext private val context: Context
 ) : EventRepository {
-
-    private val gson = Gson()
-
-    private fun parseErrorMessage(e: Exception): String {
-        return if (e is HttpException) {
-            try {
-                val errorBody = e.response()?.errorBody()?.string()
-                val apiResponse = gson.fromJson(errorBody, ApiResponse::class.java)
-                apiResponse.error ?: "Ошибка ${e.code()}"
-            } catch (_: Exception) {
-                "Ошибка ${e.code()}: ${e.message()}"
-            }
-        } else {
-            "Ошибка сети: ${e.message}"
-        }
-    }
 
     override suspend fun createEvent(request: CreateEventRequest): DataResult<Event> {
         return try {
@@ -104,7 +84,7 @@ class RetrofitEventRepository @Inject constructor(
         return try {
             val croppedFile = ImageUtils.cropToSquareFile(context, uri)
                 ?: return DataResult.Error("Не удалось обработать фото")
-            val compressedFile = ImageUtils.compressImage(croppedFile, 5 * 1024)
+            val compressedFile = ImageUtils.compressImage(croppedFile, 5 * 1024 * 1024)
             val requestBody = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("avatar", compressedFile.name, requestBody)
             val response = eventApi.uploadEventAvatar(eventId, part)

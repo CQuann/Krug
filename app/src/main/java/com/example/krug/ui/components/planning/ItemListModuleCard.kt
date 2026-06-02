@@ -86,7 +86,7 @@ fun ItemListModuleCard(
                         // Индикатор статуса (аватар или иконка)
                         if (assignedToOther) {
                             AsyncImage(
-                                model = "${Constants.BASE_URL}/avatars/${item.assigned_user_id}.jpg",
+                                model = "${Constants.BASE_URL}/avatars/${item.assigned_user_id}",
                                 contentDescription = null,
                                 modifier = Modifier
                                     .size(32.dp)

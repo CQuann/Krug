@@ -14,13 +14,11 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
-import com.example.krug.R
 import com.example.krug.data.model.RequestState
 import com.example.krug.data.model.event.Event
 import com.example.krug.ui.screens.event.planning.EventPlanningScreen
@@ -63,7 +61,7 @@ fun EventScreen(
                         ) {
                             Box(modifier = Modifier.size(36.dp)) {
                                 AsyncImage(
-                                    model = "${Constants.BASE_URL}/event-avatars/${event?.eventId}?t=${System.currentTimeMillis()}",
+                                    model = "${Constants.BASE_URL}/event-avatars/${event?.eventId}",
                                     contentDescription = null,
                                     modifier = Modifier.fillMaxSize().clip(CircleShape),
                                     contentScale = ContentScale.Crop

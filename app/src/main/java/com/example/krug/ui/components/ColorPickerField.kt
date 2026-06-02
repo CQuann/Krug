@@ -43,7 +43,7 @@ fun ColorPickerField(
                 )
             },
             modifier = Modifier
-                .menuAnchor()
+                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryNotEditable, enabled = true)
                 .fillMaxWidth()
         )
 

@@ -1,5 +1,7 @@
 package com.example.krug.ui.components
 
+import android.Manifest
+import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -23,9 +25,9 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
+import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import java.io.File
@@ -47,6 +49,18 @@ fun PhotoPicker(
             onUriSelected(uri)
         }
     }
+
+    val cameraPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            cameraLauncher.launch(null)
+        } else {
+            // показываем сообщение, что разрешение не дано
+        }
+    }
+
+
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { onUriSelected(it) }
     }
@@ -124,7 +138,12 @@ fun PhotoPicker(
                                     .fillMaxWidth()
                                     .clickable {
                                         showMenu = false
-                                        cameraLauncher.launch(null)
+                                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
+                                            == PackageManager.PERMISSION_GRANTED) {
+                                            cameraLauncher.launch(null)
+                                        } else {
+                                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
+                                        }
                                     }
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 verticalAlignment = Alignment.CenterVertically,

@@ -253,6 +253,7 @@ fun SetupNavGraph() {
             val isCheckingUsername by viewModel.isCheckingUsername.collectAsStateWithLifecycle()
             val usernameError by viewModel.usernameError.collectAsStateWithLifecycle()
             val requestState by viewModel.requestState.collectAsStateWithLifecycle()
+            val isLoggingOut by viewModel.isLoggingOut.collectAsStateWithLifecycle()
 
             ProfileScreen(
                 userData = userData,
@@ -277,6 +278,7 @@ fun SetupNavGraph() {
                 onUpdateDescription = { viewModel.updateDescription(it) },
                 onChangePhotoClick = { navController.navigate(Screen.ProfilePhotoUpload.route) },
                 onSaveProfile = { viewModel.saveProfile() },
+                isLoggingOut = isLoggingOut,
                 onLogout = { viewModel.logout() },
                 onNavigateToLogin = {
                     navController.navigate(Screen.LoginEmail.route) {

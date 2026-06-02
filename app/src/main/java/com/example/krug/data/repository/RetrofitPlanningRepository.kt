@@ -1,12 +1,10 @@
 package com.example.krug.data.repository
 
-import com.example.krug.data.model.ApiResponse
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.DataResult.*
 import com.example.krug.data.network.PlanningApi
 import com.example.krug.data.model.planning.*
-import com.google.gson.Gson
-import retrofit2.HttpException
+import com.example.krug.utils.NetworkUtils.parseErrorMessage
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -14,22 +12,6 @@ import javax.inject.Singleton
 class RetrofitPlanningRepository @Inject constructor(
     private val api: PlanningApi
 ) : PlanningRepository {
-
-    private val gson = Gson()
-
-    private fun parseErrorMessage(e: Exception): String {
-        return if (e is HttpException) {
-            try {
-                val errorBody = e.response()?.errorBody()?.string()
-                val apiResponse = gson.fromJson(errorBody, ApiResponse::class.java)
-                apiResponse.error ?: "Ошибка ${e.code()}"
-            } catch (_: Exception) {
-                "Ошибка ${e.code()}: ${e.message()}"
-            }
-        } else {
-            "Ошибка сети: ${e.message}"
-        }
-    }
 
     override suspend fun getPlanningModules(eventId: String): DataResult<PlanningModulesResponse> {
         return try {

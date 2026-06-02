@@ -18,16 +18,21 @@ import javax.inject.Inject
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
 
-    @Inject lateinit var inviteTokenHolder: InviteTokenHolder
+    @Inject
+    lateinit var inviteTokenHolder: InviteTokenHolder
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         handleDeepLink(intent)
         setContent {
             KrugTheme {
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colorScheme.background) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    color = MaterialTheme.colorScheme.background
+                ) {
                     SetupNavGraph()
                 }
+
             }
         }
     }
@@ -42,7 +47,10 @@ class MainActivity : ComponentActivity() {
         val data = intent?.data
         if (data != null) {
             Log.d("DeepLink", "scheme: ${data.scheme}, host: ${data.host}, path: ${data.path}")
-            if (data.scheme == "https" && data.host == "kruug.netlify.app" && data.path?.startsWith("/invite") == true) {
+            if (data.scheme == "https" && data.host == "kruug.netlify.app" && data.path?.startsWith(
+                    "/invite"
+                ) == true
+            ) {
                 val token = data.getQueryParameter("token")
                 Log.d("DeepLink", "Token: $token")
                 if (!token.isNullOrBlank()) {

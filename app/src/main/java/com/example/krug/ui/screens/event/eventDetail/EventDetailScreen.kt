@@ -1,24 +1,67 @@
 package com.example.krug.ui.screens.event.eventDetail
 
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.*
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.Archive
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.ContentCopy
+import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Description
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Link
+import androidx.compose.material.icons.filled.LocationOn
+import androidx.compose.material.icons.filled.MoreVert
+import androidx.compose.material.icons.filled.Schedule
+import androidx.compose.material.icons.filled.Shield
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.key
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalClipboardManager
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
@@ -29,7 +72,6 @@ import com.example.krug.data.model.event.Event
 import com.example.krug.data.model.event.Member
 import com.example.krug.ui.components.DetailField
 import com.example.krug.ui.theme.KrugTheme
-import com.example.krug.utils.AvatarUrlProvider
 import com.example.krug.utils.Constants
 import com.example.krug.utils.DateUtils
 import kotlinx.coroutines.flow.MutableSharedFlow
@@ -66,6 +108,7 @@ fun EventDetailScreen(
 
     val snackbarHostState = remember { SnackbarHostState() }
     val scope = rememberCoroutineScope()
+    val context = LocalContext.current
 
     LaunchedEffect(Unit) {
         snackbarEvents.collect { message ->
@@ -100,13 +143,19 @@ fun EventDetailScreen(
     ) { padding ->
         when (requestState) {
             RequestState.Loading -> Box(
-                Modifier.fillMaxSize().padding(padding),
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) { CircularProgressIndicator() }
+
             is RequestState.Error -> Box(
-                Modifier.fillMaxSize().padding(padding),
+                Modifier
+                    .fillMaxSize()
+                    .padding(padding),
                 contentAlignment = Alignment.Center
             ) { Text("Ошибка: ${requestState.message}", color = MaterialTheme.colorScheme.error) }
+
             RequestState.Idle, RequestState.Success -> {
                 val event = detailedEvent?.event
                 Column(
@@ -119,12 +168,14 @@ fun EventDetailScreen(
                 ) {
                     // Аватар события
                     event?.eventId?.let {
-                        val avatarUrl = "${Constants.BASE_URL}/event-avatars/$it?t=${System.currentTimeMillis()}"
+                        val avatarUrl = "${Constants.BASE_URL}/event-avatars/$it"
                         Box(modifier = Modifier.size(120.dp)) {
                             AsyncImage(
                                 model = avatarUrl,
                                 contentDescription = null,
-                                modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                modifier = Modifier
+                                    .fillMaxSize()
+                                    .clip(CircleShape),
                                 contentScale = ContentScale.Crop,
                                 error = painterResource(R.drawable.ic_default_event_avatar)
                             )
@@ -139,13 +190,20 @@ fun EventDetailScreen(
                     Spacer(Modifier.height(24.dp))
 
                     DetailField("Местоположение", event?.location, Icons.Default.LocationOn)
-                    DetailField("Дата и время начала", DateUtils.formatFullDateTime(event?.startDateTime), Icons.Default.CalendarToday)
-                    DetailField("Дата и время окончания", DateUtils.formatFullDateTime(event?.endDateTime), Icons.Default.Schedule)
+                    DetailField(
+                        "Дата и время начала",
+                        DateUtils.formatFullDateTime(event?.startDateTime),
+                        Icons.Default.CalendarToday
+                    )
+                    DetailField(
+                        "Дата и время окончания",
+                        DateUtils.formatFullDateTime(event?.endDateTime),
+                        Icons.Default.Schedule
+                    )
                     DetailField("Описание", event?.description, Icons.Default.Description)
 
                     // Пригласительная ссылка с кнопкой копирования внутри поля
                     detailedEvent?.inviteLink?.let { link ->
-                        val clipboardManager = LocalClipboardManager.current
                         Spacer(Modifier.height(12.dp))
                         OutlinedTextField(
                             value = link,
@@ -162,7 +220,9 @@ fun EventDetailScreen(
                             },
                             trailingIcon = {
                                 IconButton(onClick = {
-                                    clipboardManager.setText(AnnotatedString(link))
+                                    val clipManager = context.getSystemService(android.content.Context.CLIPBOARD_SERVICE) as android.content.ClipboardManager
+                                    val clip = android.content.ClipData.newPlainText("invite link", link)
+                                    clipManager.setPrimaryClip(clip)
                                     scope.launch {
                                         snackbarHostState.showSnackbar("Ссылка скопирована")
                                     }
@@ -177,51 +237,83 @@ fun EventDetailScreen(
                     // Список участников
                     detailedEvent?.members?.let { members ->
                         Spacer(Modifier.height(24.dp))
-                        Text("Участники (${members.size})", style = MaterialTheme.typography.titleMedium)
+                        Text(
+                            "Участники (${members.size})",
+                            style = MaterialTheme.typography.titleMedium
+                        )
                         Spacer(Modifier.height(8.dp))
                         members.forEachIndexed { idx, member ->
-                            if (idx > 0) HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                            val perms = member.permissions
-                            val isCreator = perms[0] == '1'
-                            val isAdmin = perms[1] == '1'
-                            val isSelf = member.userId == currentUserId
-                            var showMenu by remember { mutableStateOf(false) }
+                            key(member.userId) {
+                                if (idx > 0) HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                                val perms = member.permissions
+                                val isCreator = perms[0] == '1'
+                                val isAdmin = perms[1] == '1'
+                                val isSelf = member.userId == currentUserId
+                                var showMenu by remember { mutableStateOf(false) }
 
-                            Row(
-                                modifier = Modifier.fillMaxWidth().padding(vertical = 8.dp),
-                                verticalAlignment = Alignment.CenterVertically
-                            ) {
-                                AsyncImage(
-                                    model = AvatarUrlProvider.build(member.userId),
-                                    contentDescription = null,
-                                    modifier = Modifier.size(32.dp).clip(CircleShape),
-                                    error = painterResource(R.drawable.ic_default_avatar)
-                                )
-                                Spacer(Modifier.width(12.dp))
-                                Text(member.displayName, style = MaterialTheme.typography.bodyLarge)
-                                if (isCreator) {
-                                    Spacer(Modifier.width(6.dp))
-                                    Icon(Icons.Default.Star, "Создатель", tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(18.dp))
-                                } else if (isAdmin) {
-                                    Spacer(Modifier.width(6.dp))
-                                    Icon(Icons.Default.Shield, "Админ", tint = MaterialTheme.colorScheme.secondary, modifier = Modifier.size(18.dp))
-                                }
-                                if (canManageMembers && !isSelf) {
-                                    Spacer(Modifier.weight(1f))
-                                    Box {
-                                        IconButton(onClick = { showMenu = !showMenu }) {
-                                            Icon(Icons.Default.MoreVert, "Действия")
-                                        }
-                                        DropdownMenu(expanded = showMenu, onDismissRequest = { showMenu = false }) {
-                                            DropdownMenuItem(
-                                                text = { Text("Удалить") },
-                                                onClick = { showMenu = false; onRemoveMemberClick(member.userId) }
-                                            )
-                                            if (canToggleAdmin) {
+                                Row(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    AsyncImage(
+                                        model = "${Constants.BASE_URL}/avatars/$member.userId",
+                                        contentDescription = null,
+                                        modifier = Modifier
+                                            .size(32.dp)
+                                            .clip(CircleShape),
+                                        error = painterResource(R.drawable.ic_default_avatar)
+                                    )
+                                    Spacer(Modifier.width(12.dp))
+                                    Text(
+                                        member.displayName,
+                                        style = MaterialTheme.typography.bodyLarge
+                                    )
+                                    if (isCreator) {
+                                        Spacer(Modifier.width(6.dp))
+                                        Icon(
+                                            Icons.Default.Star,
+                                            "Создатель",
+                                            tint = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    } else if (isAdmin) {
+                                        Spacer(Modifier.width(6.dp))
+                                        Icon(
+                                            Icons.Default.Shield,
+                                            "Админ",
+                                            tint = MaterialTheme.colorScheme.secondary,
+                                            modifier = Modifier.size(18.dp)
+                                        )
+                                    }
+                                    if (canManageMembers && !isSelf) {
+                                        Spacer(Modifier.weight(1f))
+                                        Box {
+                                            IconButton(onClick = { showMenu = !showMenu }) {
+                                                Icon(Icons.Default.MoreVert, "Действия")
+                                            }
+                                            DropdownMenu(
+                                                expanded = showMenu,
+                                                onDismissRequest = { showMenu = false }) {
                                                 DropdownMenuItem(
-                                                    text = { Text(if (isAdmin) "Разжаловать" else "Назначить админом") },
-                                                    onClick = { showMenu = false; onToggleAdminClick(member) }
+                                                    text = { Text("Удалить") },
+                                                    onClick = {
+                                                        showMenu = false; onRemoveMemberClick(
+                                                        member.userId
+                                                    )
+                                                    }
                                                 )
+                                                if (canToggleAdmin) {
+                                                    DropdownMenuItem(
+                                                        text = { Text(if (isAdmin) "Разжаловать" else "Назначить админом") },
+                                                        onClick = {
+                                                            showMenu = false; onToggleAdminClick(
+                                                            member
+                                                        )
+                                                        }
+                                                    )
+                                                }
                                             }
                                         }
                                     }
@@ -306,9 +398,17 @@ fun EventDetailCreatorPreview() {
                 ),
                 inviteLink = "https://krug.netlify.app/invite?token=abc123",
                 members = listOf(
-                    Member(userId = "user1", displayName = "Петр (вы)", permissions = "100"), // создатель
+                    Member(
+                        userId = "user1",
+                        displayName = "Петр (вы)",
+                        permissions = "100"
+                    ), // создатель
                     Member(userId = "user2", displayName = "Иван", permissions = "010"), // админ
-                    Member(userId = "user3", displayName = "Мария", permissions = "001")  // участник
+                    Member(
+                        userId = "user3",
+                        displayName = "Мария",
+                        permissions = "001"
+                    )  // участник
                 ),
                 permissions = "100"
             ),
@@ -341,9 +441,21 @@ fun EventDetailAdminPreview() {
                 ),
                 inviteLink = null,
                 members = listOf(
-                    Member(userId = "user1", displayName = "Петр", permissions = "100"), // создатель
-                    Member(userId = "user2", displayName = "Иван (вы)", permissions = "010"), // админ
-                    Member(userId = "user3", displayName = "Мария", permissions = "001")  // участник
+                    Member(
+                        userId = "user1",
+                        displayName = "Петр",
+                        permissions = "100"
+                    ), // создатель
+                    Member(
+                        userId = "user2",
+                        displayName = "Иван (вы)",
+                        permissions = "010"
+                    ), // админ
+                    Member(
+                        userId = "user3",
+                        displayName = "Мария",
+                        permissions = "001"
+                    )  // участник
                 ),
                 permissions = "010"
             ),
@@ -376,9 +488,17 @@ fun EventDetailMemberPreview() {
                 ),
                 inviteLink = null,
                 members = listOf(
-                    Member(userId = "user1", displayName = "Петр", permissions = "100"), // создатель
+                    Member(
+                        userId = "user1",
+                        displayName = "Петр",
+                        permissions = "100"
+                    ), // создатель
                     Member(userId = "user2", displayName = "Иван", permissions = "010"), // админ
-                    Member(userId = "user3", displayName = "Мария (вы)", permissions = "001")  // участник
+                    Member(
+                        userId = "user3",
+                        displayName = "Мария (вы)",
+                        permissions = "001"
+                    )  // участник
                 ),
                 permissions = "001"
             ),

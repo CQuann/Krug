@@ -1,7 +1,5 @@
 package com.example.krug.ui.components
 
-import androidx.compose.animation.core.Animatable
-import androidx.compose.animation.core.keyframes
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -11,7 +9,6 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.aspectRatio
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -71,6 +68,7 @@ fun CodeInputField(
     LaunchedEffect(code) {
         onCodeChanged(code)
         if (code.length == length) {
+            keyboardController?.hide()
             onCodeCompleted(code)
         }
     }
@@ -79,7 +77,6 @@ fun CodeInputField(
         focusRequester.requestFocus()
     }
 
-    val shake = remember { Animatable(0f) }
 
     Box {
         // 🔥 Скрытый input (без выделения и курсора)

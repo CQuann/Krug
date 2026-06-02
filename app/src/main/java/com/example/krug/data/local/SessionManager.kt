@@ -7,10 +7,12 @@ import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.launch
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -18,8 +20,8 @@ private val Context.sessionDataStore: DataStore<Preferences> by preferencesDataS
 
 @Singleton
 class SessionManager @Inject constructor(
-    @ApplicationContext private val context: Context
-) {
+    @ApplicationContext private val context: Context)
+{
     companion object {
         private val TOKEN_KEY = stringPreferencesKey("auth_token")
         private val USER_ID_KEY = stringPreferencesKey("user_id")
@@ -34,7 +36,7 @@ class SessionManager @Inject constructor(
         private set
 
     init {
-        runBlocking {
+        CoroutineScope(Dispatchers.IO).launch {
             cachedToken = getToken()
             cachedUserId = getUserId()
         }

@@ -1,6 +1,5 @@
 package com.example.krug.ui.screens.profile
 
-import android.net.Uri
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.SessionManager
@@ -81,7 +80,7 @@ class ProfileViewModel @Inject constructor(
                     _email.value = user.email
                     _birthday.value = user.birthday ?: ""
                     _description.value = user.description ?: ""
-                    _avatarUrl.value = "${Constants.BASE_URL}/avatars/${user.userId}?t=${System.currentTimeMillis()}"
+                    _avatarUrl.value = "${Constants.BASE_URL}/avatars/${user.userId}"
                     _usernameAvailable.value = null
                     _usernameError.value = null
                     _requestState.value = RequestState.Idle
@@ -123,23 +122,6 @@ class ProfileViewModel @Inject constructor(
             else -> null
         }
         checkUsername(value)
-    }
-
-    fun uploadAvatar(uri: Uri) {
-        viewModelScope.launch {
-            _requestState.value = RequestState.Loading
-            when (val result = authRepository.uploadAvatar(uri)) {
-                is DataResult.Success -> {
-                    _events.emit(ProfileEvent.ShowSnackbar("Аватар обновлён"))
-                    loadUser()
-                    _requestState.value = RequestState.Idle
-                }
-                is DataResult.Error -> {
-                    _events.emit(ProfileEvent.ShowSnackbar("Ошибка загрузки аватара"))
-                    _requestState.value = RequestState.Idle
-                }
-            }
-        }
     }
 
     private fun checkUsername(username: String) {
@@ -201,11 +183,16 @@ class ProfileViewModel @Inject constructor(
         }
     }
 
+    private val _isLoggingOut = MutableStateFlow(false)
+    val isLoggingOut: StateFlow<Boolean> = _isLoggingOut.asStateFlow()
+
     fun logout() {
         viewModelScope.launch {
+            _isLoggingOut.value = true
             authRepository.logout()
             sessionManager.clearAll()
             _events.emit(ProfileEvent.NavigateToLogin)
+            _isLoggingOut.value = false
         }
     }
 

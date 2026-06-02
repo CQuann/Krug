@@ -5,6 +5,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
@@ -59,17 +60,30 @@ fun MainAppScreen(
     }
 
     val avatarUrl = remember(userId) {
-        if (userId != null) "${Constants.BASE_URL}/avatars/${userId}?t=${System.currentTimeMillis()}"
-        else null
+        if (userId != null) "${Constants.BASE_URL}/avatars/$userId" else null
     }
     val tabs = listOf("active" to "Активные", "archived" to "Архив")
     val pagerState = rememberPagerState(pageCount = { tabs.size }, initialPage = if (currentStatus == "active") 0 else 1)
+
+    val listState = rememberLazyListState()
 
     LaunchedEffect(pagerState.currentPage) {
         val newStatus = tabs[pagerState.currentPage].first
         if (newStatus != currentStatus) {
             onStatusChange(newStatus)
         }
+    }
+
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisibleIndex ->
+                if (lastVisibleIndex != null &&
+                    lastVisibleIndex >= events.size - 3 &&
+                    !isLoadingMore &&
+                    events.size < totalEvents) {
+                    onLoadMore()
+                }
+            }
     }
 
     Scaffold(
@@ -144,15 +158,16 @@ fun MainAppScreen(
                                 )
                             }
                         } else {
-                            LazyColumn(modifier = Modifier.fillMaxSize()) {
+                            LazyColumn(
+                                state = listState,
+                                modifier = Modifier.fillMaxSize()
+                            ) {
                                 items(events.size) { index ->
                                     val event = events[index]
                                     EventCard(
                                         event = event,
-                                        onClick = { onEventClick(event.eventId) })
-                                    if (index == events.size - 1 && !isLoadingMore && events.size < totalEvents) {
-                                        LaunchedEffect(event.eventId) { onLoadMore() }
-                                    }
+                                        onClick = { onEventClick(event.eventId) }
+                                    )
                                 }
                                 if (isLoadingMore) {
                                     item {

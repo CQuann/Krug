@@ -21,9 +21,15 @@ class AuthInterceptor @Inject constructor(
     override fun intercept(chain: Interceptor.Chain): Response {
         val originalRequest = chain.request()
         val path = originalRequest.url.encodedPath
-        if (publicPaths.contains(path)) {
+
+        val isPublic = publicPaths.contains(path) ||
+                path.startsWith("/avatars/") ||
+                path.startsWith("/event-avatars/")
+
+        if (isPublic) {
             return chain.proceed(originalRequest)
         }
+
         val token = sessionManager.cachedToken
         val newRequest = if (token.isNullOrBlank()) originalRequest
         else originalRequest.newBuilder()

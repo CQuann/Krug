@@ -1,4 +1,3 @@
-// ui/screens/main/EventCard.kt
 package com.example.krug.ui.screens.main
 
 import androidx.compose.foundation.background
@@ -55,7 +54,7 @@ fun EventCard(event: Event, onClick: () -> Unit) {
             // Аватар события
             Box(modifier = Modifier.size(48.dp)) {
                 AsyncImage(
-                    model = "${Constants.BASE_URL}/event-avatars/${event.eventId}?t=${System.currentTimeMillis()}",
+                    model = "${Constants.BASE_URL}/event-avatars/${event.eventId}",
                     contentDescription = null,
                     modifier = Modifier
                         .fillMaxSize()

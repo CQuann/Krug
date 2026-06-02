@@ -54,6 +54,7 @@ fun ProfileScreen(
     onUpdateDescription: (String) -> Unit,
     onChangePhotoClick: () -> Unit,
     onSaveProfile: () -> Unit,
+    isLoggingOut: Boolean,
     onLogout: () -> Unit,
     onNavigateToLogin: () -> Unit
 ) {
@@ -130,7 +131,7 @@ fun ProfileScreen(
 
                     ProfileField("Никнейм", username, isEditing, onUpdateUsername, Icons.Default.AlternateEmail, usernameError != null) {
                         when {
-                            usernameError != null -> Text(usernameError!!)
+                            usernameError != null -> Text(usernameError)
                             isCheckingUsername -> Text("Проверка...", color = MaterialTheme.colorScheme.onSurfaceVariant)
                             usernameAvailable == true && isEditing -> Text("Доступен")
                             usernameAvailable == false && isEditing -> Text("Занят")
@@ -180,12 +181,23 @@ fun ProfileScreen(
                 } else {
                     OutlinedButton(
                         onClick = onLogout,
+                        enabled = !isLoggingOut,
                         modifier = Modifier
                             .fillMaxWidth()
                             .padding(horizontal = 16.dp, vertical = 12.dp),
                         shape = RoundedCornerShape(12.dp),
                         colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.error)
-                    ) { Text("Выйти из аккаунта", fontWeight = FontWeight.Medium) }
+                    ) {
+                        if (isLoggingOut) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(20.dp),
+                                strokeWidth = 2.dp,
+                                color = MaterialTheme.colorScheme.error
+                            )
+                        } else {
+                            Text("Выйти из аккаунта", fontWeight = FontWeight.Medium)
+                        }
+                    }
                 }
 
                 if (requestState is RequestState.Error) {
@@ -265,6 +277,7 @@ fun ProfileScreenNormalPreview() {
             onChangePhotoClick = {},
             onSaveProfile = {},
             onLogout = {},
+            isLoggingOut = false,
             onNavigateToLogin = {}
         )
     }
@@ -299,6 +312,7 @@ fun ProfileScreenEmptyFieldsPreview() {
             onChangePhotoClick = {},
             onSaveProfile = {},
             onLogout = {},
+            isLoggingOut = false,
             onNavigateToLogin = {}
         )
     }
@@ -333,6 +347,7 @@ fun ProfileScreenEditingPreview() {
             onChangePhotoClick = {},
             onSaveProfile = {},
             onLogout = {},
+            isLoggingOut = false,
             onNavigateToLogin = {}
         )
     }

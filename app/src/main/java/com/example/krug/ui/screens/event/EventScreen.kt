@@ -2,11 +2,13 @@ package com.example.krug.ui.screens.event
 
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.*
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -16,20 +18,15 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import coil.compose.AsyncImage
 import com.example.krug.data.model.RequestState
 import com.example.krug.data.model.event.Event
-import com.example.krug.ui.screens.event.planning.EventPlanningScreen
-import com.example.krug.ui.screens.event.planning.EventPlanningViewModel
+import com.example.krug.ui.screens.event.planning.PlanningNavGraph
 import com.example.krug.ui.theme.KrugTheme
 import com.example.krug.utils.Constants
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
-
-// CompositionLocal для eventId – доступен всем вложенным компонентам
-val LocalEventId = compositionLocalOf<String> { error("No EventId provided") }
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -42,6 +39,8 @@ fun EventScreen(
     onBackClick: () -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
+    var isFullScreen by remember { mutableStateOf(false) }
+    val coroutineScope = rememberCoroutineScope()
 
     LaunchedEffect(Unit) {
         snackbarEvents.collect { message ->
@@ -49,10 +48,10 @@ fun EventScreen(
         }
     }
 
-    CompositionLocalProvider(LocalEventId provides eventId) {
-        Scaffold(
-            snackbarHost = { SnackbarHost(snackbarHostState) },
-            topBar = {
+    Scaffold(
+        snackbarHost = { SnackbarHost(snackbarHostState) },
+        topBar = {
+            if (!isFullScreen) {
                 TopAppBar(
                     title = {
                         Row(
@@ -63,7 +62,9 @@ fun EventScreen(
                                 AsyncImage(
                                     model = "${Constants.BASE_URL}/event-avatars/${event?.eventId}",
                                     contentDescription = null,
-                                    modifier = Modifier.fillMaxSize().clip(CircleShape),
+                                    modifier = Modifier
+                                        .fillMaxSize()
+                                        .clip(CircleShape),
                                     contentScale = ContentScale.Crop
                                 )
                             }
@@ -81,56 +82,55 @@ fun EventScreen(
                     }
                 )
             }
-        ) { padding ->
-            Column(modifier = Modifier.padding(padding)) {
-                when (requestState) {
-                    RequestState.Loading -> Box(
-                        Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) { CircularProgressIndicator() }
-                    is RequestState.Error -> Box(
-                        Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) { Text("Ошибка: ${requestState.message}", color = MaterialTheme.colorScheme.error) }
-                    RequestState.Idle, RequestState.Success -> {
-                        var selectedTab by remember { mutableIntStateOf(1) }
-                        val tabs = listOf("Чат", "Планирование", "Альбом")
+        }
+    ) { padding ->
+        Column(modifier = Modifier.padding(padding)) {
+            when (requestState) {
+                RequestState.Loading -> Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) { CircularProgressIndicator() }
 
-                        SecondaryTabRow(selectedTabIndex = selectedTab) {
+                is RequestState.Error -> Box(
+                    Modifier.fillMaxSize(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        "Ошибка: ${requestState.message}",
+                        color = MaterialTheme.colorScheme.error
+                    )
+                }
+
+                RequestState.Idle, RequestState.Success -> {
+                    val tabs = listOf("Чат", "Планирование", "Альбом")
+                    val pagerState = rememberPagerState(pageCount = { tabs.size })
+
+                    if (!isFullScreen) {
+                        SecondaryTabRow(selectedTabIndex = pagerState.currentPage) {
                             tabs.forEachIndexed { index, title ->
                                 Tab(
-                                    selected = selectedTab == index,
-                                    onClick = { selectedTab = index },
+                                    selected = pagerState.currentPage == index,
+                                    onClick = {
+                                        coroutineScope.launch {
+                                            pagerState.animateScrollToPage(index)
+                                        }
+                                    },
                                     text = { Text(title) }
                                 )
                             }
                         }
+                    }
 
-                        when (selectedTab) {
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize()
+                    ) { page ->
+                        when (page) {
                             0 -> EmptyTabPlaceholder("Чат", Icons.AutoMirrored.Filled.Chat)
-                            1 -> {
-                                val planningViewModel: EventPlanningViewModel = hiltViewModel()
-                                val planningUiState by planningViewModel.uiState.collectAsStateWithLifecycle()
-                                val creationMode by planningViewModel.creationMode.collectAsStateWithLifecycle()
-                                val showTypeDialog by planningViewModel.showTypeDialog.collectAsStateWithLifecycle()
-
-                                EventPlanningScreen(
-                                    uiState = planningUiState,
-                                    creationMode = creationMode,
-                                    showTypeDialog = showTypeDialog,
-                                    currentUserId = planningViewModel.getCurrentUserId(),
-                                    snackbarEvents = planningViewModel.snackbarEvents,
-                                    onFabClick = { planningViewModel.onFabClick() },
-                                    onDismissTypeDialog = { planningViewModel.dismissTypeDialog() },
-                                    onSelectPoll = { planningViewModel.startCreatingPoll() },
-                                    onSelectItemList = { planningViewModel.startCreatingItemList() },
-                                    onSelectTaskList = { planningViewModel.startCreatingTaskList() },
-                                    onCreationFinished = { planningViewModel.onCreationFinished() },
-                                    onVotePoll = { pollId, indexes -> planningViewModel.votePoll(pollId, indexes) },
-                                    onAssignItem = { type, mId, iId, assign -> planningViewModel.assignItem(type, mId, iId, assign) },
-                                    onCompleteTask = { mId, iId, completed -> planningViewModel.completeTask(mId, iId, completed) }
-                                )
-                            }
+                            1 -> PlanningNavGraph(
+                                eventId = eventId,
+                                onFullScreenMode = { isFullScreen = it }
+                            )
                             2 -> EmptyTabPlaceholder("Альбом", Icons.Default.PhotoLibrary)
                         }
                     }
@@ -162,28 +162,27 @@ private fun EmptyTabPlaceholder(text: String, icon: ImageVector) {
     }
 }
 
+
 @Preview(showBackground = true, name = "EventScreen – успех")
 @Composable
 fun EventScreenPreview() {
     KrugTheme {
-        CompositionLocalProvider(LocalEventId provides "1") {
-            EventScreen(
-                event = Event(
-                    eventId = "1",
-                    title = "Пикник",
-                    color = "#FF5733",
-                    status = "active",
-                    description = null,
-                    location = "Парк",
-                    startDateTime = "2026-05-10T15:00Z",
-                    endDateTime = "2026-05-10T18:00Z"
-                ),
-                requestState = RequestState.Idle,
+        EventScreen(
+            event = Event(
                 eventId = "1",
-                snackbarEvents = MutableSharedFlow(),
-                onHeaderClick = {},
-                onBackClick = {}
-            )
-        }
+                title = "Пикник",
+                color = "#FF5733",
+                status = "active",
+                description = null,
+                location = "Парк",
+                startDateTime = "2026-05-10T15:00Z",
+                endDateTime = "2026-05-10T18:00Z"
+            ),
+            requestState = RequestState.Idle,
+            eventId = "1",
+            snackbarEvents = MutableSharedFlow(),
+            onHeaderClick = {},
+            onBackClick = {}
+        )
     }
 }

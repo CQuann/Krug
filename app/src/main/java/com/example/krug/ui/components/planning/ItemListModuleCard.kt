@@ -1,6 +1,5 @@
 package com.example.krug.ui.components.planning
 
-import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -27,6 +26,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -54,11 +54,15 @@ fun ItemListModuleCard(
 
     Card(
         modifier = Modifier.fillMaxWidth(),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+        elevation = CardDefaults.cardElevation(defaultElevation = 3.dp),
+        shape = RoundedCornerShape(16.dp)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(module.title, style = MaterialTheme.typography.titleMedium)
+            Text(
+                text = module.title,
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold
+            )
             Spacer(Modifier.height(12.dp))
 
             items.forEach { item ->
@@ -73,25 +77,23 @@ fun ItemListModuleCard(
                     shape = RoundedCornerShape(12.dp),
                     color = when {
                         assignedToMe -> MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f)
-                        isCompleted -> MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f)
-                        assignedToOther -> MaterialTheme.colorScheme.surfaceVariant
+                        isCompleted -> MaterialTheme.colorScheme.surfaceVariant
+                        assignedToOther -> MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.2f)
                         else -> MaterialTheme.colorScheme.surface
-                    },
-                    tonalElevation = if (assignedToMe || assignedToOther) 1.dp else 0.dp
+                    }
                 ) {
                     Row(
                         modifier = Modifier.padding(12.dp),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        // Индикатор статуса (аватар или иконка)
+                        // Индикатор статуса
                         if (assignedToOther) {
                             AsyncImage(
                                 model = "${Constants.BASE_URL}/avatars/${item.assigned_user_id}",
                                 contentDescription = null,
                                 modifier = Modifier
-                                    .size(32.dp)
-                                    .clip(CircleShape)
-                                    .background(MaterialTheme.colorScheme.surface, CircleShape),
+                                    .size(36.dp)
+                                    .clip(CircleShape),
                                 error = painterResource(R.drawable.ic_default_avatar)
                             )
                         } else {
@@ -107,20 +109,16 @@ fun ItemListModuleCard(
                                     assignedToMe -> MaterialTheme.colorScheme.primary
                                     else -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.5f)
                                 },
-                                modifier = Modifier.size(32.dp)
+                                modifier = Modifier.size(36.dp)
                             )
                         }
                         Spacer(Modifier.width(12.dp))
 
-                        // Текст и подпись
                         Column(modifier = Modifier.weight(1f)) {
                             Text(
                                 text = item.text,
                                 style = MaterialTheme.typography.bodyLarge,
-                                color = when {
-                                    isCompleted -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f)
-                                    else -> MaterialTheme.colorScheme.onSurface
-                                },
+                                color = if (isCompleted) MaterialTheme.colorScheme.onSurface.copy(alpha = 0.6f) else MaterialTheme.colorScheme.onSurface,
                                 textDecoration = if (isCompleted) TextDecoration.LineThrough else TextDecoration.None
                             )
                             if (assignedToMe) {
@@ -138,7 +136,6 @@ fun ItemListModuleCard(
                             }
                         }
 
-                        // Действия
                         if (assignedToMe) {
                             TextButton(
                                 onClick = { onAssign(module.type, module.id, item.id, false) }

@@ -21,9 +21,6 @@ class EventPlanningViewModel @Inject constructor(
 
     private val eventId: String = savedStateHandle.get<String>("eventId") ?: ""
 
-    fun getEventId(): String = eventId
-
-    // Общий снекбар для ошибок
     private val _snackbarEvents = MutableSharedFlow<String>()
     val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
 
@@ -32,26 +29,21 @@ class EventPlanningViewModel @Inject constructor(
         data class Content(val modules: List<PlanningModule>) : PlanningUiState()
         data class Error(val message: String) : PlanningUiState()
     }
+
     private val _uiState = MutableStateFlow<PlanningUiState>(PlanningUiState.Loading)
     val uiState: StateFlow<PlanningUiState> = _uiState.asStateFlow()
-
-    sealed class CreationMode {
-        object None : CreationMode()
-        object Poll : CreationMode()
-        object ItemList : CreationMode()
-        object TaskList : CreationMode()
-    }
-    private val _creationMode = MutableStateFlow<CreationMode>(CreationMode.None)
-    val creationMode: StateFlow<CreationMode> = _creationMode.asStateFlow()
 
     private val _showTypeDialog = MutableStateFlow(false)
     val showTypeDialog: StateFlow<Boolean> = _showTypeDialog.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
     init { loadModules() }
 
-    fun loadModules() {
+    fun loadModules(isRefresh: Boolean = false) {
         viewModelScope.launch {
-            _uiState.value = PlanningUiState.Loading
+            if (!isRefresh) _uiState.value = PlanningUiState.Loading
             when (val result = planningRepository.getPlanningModules(eventId)) {
                 is DataResult.Success -> _uiState.value = PlanningUiState.Content(result.data.modules)
                 is DataResult.Error -> {
@@ -62,26 +54,16 @@ class EventPlanningViewModel @Inject constructor(
         }
     }
 
+    fun refreshModules() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            loadModules(isRefresh = true)
+            _isRefreshing.value = false
+        }
+    }
+
     fun onFabClick() { _showTypeDialog.value = true }
     fun dismissTypeDialog() { _showTypeDialog.value = false }
-
-    fun startCreatingPoll() {
-        dismissTypeDialog()
-        _creationMode.value = CreationMode.Poll
-    }
-    fun startCreatingItemList() {
-        dismissTypeDialog()
-        _creationMode.value = CreationMode.ItemList
-    }
-    fun startCreatingTaskList() {
-        dismissTypeDialog()
-        _creationMode.value = CreationMode.TaskList
-    }
-
-    fun onCreationFinished() {
-        _creationMode.value = CreationMode.None
-        loadModules()
-    }
 
     fun votePoll(pollId: String, optionIndexes: List<Int>) {
         viewModelScope.launch {

@@ -1,5 +1,6 @@
 package com.example.krug.ui.screens.event.planning
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.model.DataResult
@@ -14,9 +15,11 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CreateListViewModel @Inject constructor(
-    private val planningRepository: PlanningRepository
+    private val planningRepository: PlanningRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
+    private val eventId: String = savedStateHandle.get<String>("eventId") ?: ""
     private var isTask: Boolean = false
 
     fun init(isTaskList: Boolean) {
@@ -79,7 +82,7 @@ class CreateListViewModel @Inject constructor(
         }
     }
 
-    fun create(eventId: String) {
+    fun create() {
         if (!validate()) return
 
         val title = _title.value.trim()

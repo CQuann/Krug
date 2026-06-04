@@ -21,15 +21,15 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.krug.R
 import com.example.krug.data.model.event.Event
 import com.example.krug.ui.theme.KrugTheme
+import com.example.krug.utils.Constants
 import kotlinx.coroutines.launch
 import androidx.core.graphics.toColorInt
-import com.example.krug.utils.Constants
+import androidx.compose.ui.tooling.preview.Preview
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
@@ -63,7 +63,10 @@ fun MainAppScreen(
         if (userId != null) "${Constants.BASE_URL}/avatars/$userId" else null
     }
     val tabs = listOf("active" to "Активные", "archived" to "Архив")
-    val pagerState = rememberPagerState(pageCount = { tabs.size }, initialPage = if (currentStatus == "active") 0 else 1)
+    val pagerState = rememberPagerState(
+        pageCount = { tabs.size },
+        initialPage = if (currentStatus == "active") 0 else 1
+    )
 
     val listState = rememberLazyListState()
 
@@ -80,7 +83,8 @@ fun MainAppScreen(
                 if (lastVisibleIndex != null &&
                     lastVisibleIndex >= events.size - 3 &&
                     !isLoadingMore &&
-                    events.size < totalEvents) {
+                    events.size < totalEvents
+                ) {
                     onLoadMore()
                 }
             }
@@ -146,7 +150,10 @@ fun MainAppScreen(
                     onRefresh = onRefresh,
                     modifier = Modifier.fillMaxSize()
                 ) {
-                    HorizontalPager(state = pagerState, modifier = Modifier.fillMaxSize()) { _ ->
+                    HorizontalPager(
+                        state = pagerState,
+                        modifier = Modifier.fillMaxSize()
+                    ) { _ ->
                         if (events.isEmpty() && !isRefreshing) {
                             Box(
                                 modifier = Modifier.fillMaxSize(),
@@ -172,10 +179,14 @@ fun MainAppScreen(
                                 if (isLoadingMore) {
                                     item {
                                         Box(
-                                            modifier = Modifier.fillMaxWidth().padding(16.dp),
+                                            modifier = Modifier
+                                                .fillMaxWidth()
+                                                .padding(16.dp),
                                             contentAlignment = Alignment.Center
                                         ) {
-                                            CircularProgressIndicator(modifier = Modifier.size(24.dp))
+                                            CircularProgressIndicator(
+                                                modifier = Modifier.size(24.dp)
+                                            )
                                         }
                                     }
                                 }
@@ -248,7 +259,10 @@ fun MainAppScreen(
                     },
                     confirmButton = {
                         TextButton(onClick = {
-                            pendingJoinEvent?.eventId?.let { onNavigateToJoinedEvent(it) }
+                            pendingJoinEvent?.eventId?.let { eventId ->
+                                onDismissJoinDialog()
+                                onNavigateToJoinedEvent(eventId)
+                            }
                         }) {
                             Text("Перейти к событию", color = MaterialTheme.colorScheme.primary)
                         }

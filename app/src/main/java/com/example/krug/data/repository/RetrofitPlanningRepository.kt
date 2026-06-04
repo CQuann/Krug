@@ -21,25 +21,31 @@ class RetrofitPlanningRepository @Inject constructor(
         }
     }
 
-    override suspend fun createPoll(eventId: String, request: CreatePollRequest): DataResult<PlanningModule> {
+    override suspend fun createPoll(eventId: String, request: CreatePollRequest): DataResult<Unit> {
         return try {
-            Success(api.createPoll(eventId, request))
+            val response = api.createPoll(eventId, request)
+            if (response.success) Success(Unit)
+            else Error(response.error ?: "Ошибка создания опроса")
         } catch (e: Exception) {
             Error(parseErrorMessage(e))
         }
     }
 
-    override suspend fun createItemList(eventId: String, request: CreateItemListRequest): DataResult<PlanningModule> {
+    override suspend fun createItemList(eventId: String, request: CreateItemListRequest): DataResult<Unit> {
         return try {
-            Success(api.createItemList(eventId, request))
+            val response = api.createItemList(eventId, request)
+            if (response.success) Success(Unit)
+            else Error(response.error ?: "Ошибка создания списка вещей")
         } catch (e: Exception) {
             Error(parseErrorMessage(e))
         }
     }
 
-    override suspend fun createTaskList(eventId: String, request: CreateTaskListRequest): DataResult<PlanningModule> {
+    override suspend fun createTaskList(eventId: String, request: CreateTaskListRequest): DataResult<Unit> {
         return try {
-            Success(api.createTaskList(eventId, request))
+            val response = api.createTaskList(eventId, request)
+            if (response.success) Success(Unit)
+            else Error(response.error ?: "Ошибка создания списка задач")
         } catch (e: Exception) {
             Error(parseErrorMessage(e))
         }

@@ -1,5 +1,6 @@
 package com.example.krug.ui.screens.event.planning
 
+import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.model.DataResult
@@ -13,10 +14,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class CreatePollViewModel @Inject constructor(
-    private val planningRepository: PlanningRepository
+    private val planningRepository: PlanningRepository,
+    savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
-    // Поля формы
+    private val eventId: String = savedStateHandle.get<String>("eventId") ?: ""
+
     private val _title = MutableStateFlow("")
     val title: StateFlow<String> = _title.asStateFlow()
 
@@ -26,22 +29,18 @@ class CreatePollViewModel @Inject constructor(
     private val _multipleChoice = MutableStateFlow(false)
     val multipleChoice: StateFlow<Boolean> = _multipleChoice.asStateFlow()
 
-    // Ошибки валидации
     private val _titleError = MutableStateFlow<String?>(null)
     val titleError: StateFlow<String?> = _titleError.asStateFlow()
 
     private val _optionErrors = MutableStateFlow<Map<Int, String>>(emptyMap())
     val optionErrors: StateFlow<Map<Int, String>> = _optionErrors.asStateFlow()
 
-    // Состояние запроса
     private val _requestState = MutableStateFlow<RequestState>(RequestState.Idle)
     val requestState: StateFlow<RequestState> = _requestState.asStateFlow()
 
-    // Снекбар
     private val _snackbarEvents = MutableSharedFlow<String>()
     val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
 
-    // Навигация (успешное создание)
     private val _navigationEvents = MutableSharedFlow<Unit>()
     val navigationEvents: SharedFlow<Unit> = _navigationEvents.asSharedFlow()
 
@@ -55,7 +54,6 @@ class CreatePollViewModel @Inject constructor(
         if (index in list.indices) {
             list[index] = value
             _options.value = list
-            // снимаем ошибку для этого поля
             val errors = _optionErrors.value.toMutableMap()
             errors.remove(index)
             _optionErrors.value = errors
@@ -71,7 +69,6 @@ class CreatePollViewModel @Inject constructor(
         if (list.size > 2 && index in list.indices) {
             list.removeAt(index)
             _options.value = list
-            // перестраиваем ошибки, т.к. индексы сместились
             val errors = _optionErrors.value.toMutableMap()
             errors.remove(index)
             val updated = mutableMapOf<Int, String>()
@@ -86,7 +83,7 @@ class CreatePollViewModel @Inject constructor(
         _multipleChoice.value = value
     }
 
-    fun createPoll(eventId: String) {
+    fun createPoll() {
         if (!validate()) return
 
         val request = CreatePollRequest(
@@ -100,7 +97,7 @@ class CreatePollViewModel @Inject constructor(
             when (val result = planningRepository.createPoll(eventId, request)) {
                 is DataResult.Success -> {
                     _snackbarEvents.emit("Опрос создан")
-                    _navigationEvents.emit(Unit) // сигнал закрыть экран создания
+                    _navigationEvents.emit(Unit)
                 }
                 is DataResult.Error -> {
                     _requestState.value = RequestState.Error(result.message)

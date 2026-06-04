@@ -86,6 +86,7 @@ class MainAppViewModel @Inject constructor(
             _isRefreshing.value = true
             when (val result = eventRepository.joinEvent(inviteToken)) {
                 is DataResult.Success -> {
+                    Log.d("MainAppViewModel", "Join event success: ${result.data}")
                     _pendingJoinEvent.value = result.data
                     _showJoinDialog.value = true
                     loadEvents(reset = true)
@@ -99,10 +100,9 @@ class MainAppViewModel @Inject constructor(
         }
     }
 
-    fun dismissJoinDialog() { _showJoinDialog.value = false }
-
-    fun navigateToJoinedEvent() {
+    fun dismissJoinDialog() {
         _showJoinDialog.value = false
+        _pendingJoinEvent.value = null
     }
 
     fun onStatusChange(status: String) {

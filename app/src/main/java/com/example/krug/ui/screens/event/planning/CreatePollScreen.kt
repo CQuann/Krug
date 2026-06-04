@@ -209,26 +209,3 @@ fun CreatePollLoadingPreview() {
         )
     }
 }
-
-@Preview(showBackground = true, name = "CreatePoll – ошибка сети")
-@Composable
-fun CreatePollNetworkErrorPreview() {
-    KrugTheme {
-        CreatePollScreen(
-            title = "Тест",
-            options = listOf("A", "B"),
-            multipleChoice = false,
-            titleError = null,
-            optionErrors = emptyMap(),
-            requestState = RequestState.Error("Нет соединения"),
-            snackbarEvents = MutableSharedFlow(),
-            onQuestionChange = {},
-            onOptionChange = { _, _ -> },
-            onAddOption = {},
-            onRemoveOption = {},
-            onMultipleChoiceToggle = {},
-            onCreatePoll = {},
-            onCancel = {}
-        )
-    }
-}

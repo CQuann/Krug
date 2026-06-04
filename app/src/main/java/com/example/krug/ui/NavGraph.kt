@@ -232,7 +232,6 @@ fun SetupNavGraph() {
                 pendingJoinEvent = pendingJoinEvent,
                 onDismissJoinDialog = { viewModel.dismissJoinDialog() },
                 onNavigateToJoinedEvent = { eventId ->
-                    viewModel.navigateToJoinedEvent()
                     navController.navigate(Screen.EventScreen.passArgs(eventId))
                 }
             )

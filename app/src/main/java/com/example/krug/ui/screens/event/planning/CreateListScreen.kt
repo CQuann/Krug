@@ -13,17 +13,16 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.krug.data.model.RequestState
-import com.example.krug.ui.screens.event.LocalEventId
 import com.example.krug.ui.theme.KrugTheme
 
 @Composable
 fun CreateItemOrTaskScreen(
+    isTask: Boolean,
     title: String,
     items: List<String>,
     titleError: String?,
     itemErrors: Map<Int, String>,
     requestState: RequestState,
-    isTask: Boolean = false,
     onTitleChange: (String) -> Unit,
     onItemChange: (Int, String) -> Unit,
     onAddItem: () -> Unit,
@@ -122,15 +121,15 @@ fun CreateItemOrTaskScreen(
 
 @Preview(showBackground = true)
 @Composable
-fun CreateListEmptyPreview() {
+fun CreateItemOrTaskScreenEmptyPreview() {
     KrugTheme {
         CreateItemOrTaskScreen(
+            isTask = false,
             title = "",
             items = listOf(""),
             titleError = null,
             itemErrors = emptyMap(),
             requestState = RequestState.Idle,
-            isTask = false,
             onTitleChange = {},
             onItemChange = { _, _ -> },
             onAddItem = {},
@@ -143,36 +142,15 @@ fun CreateListEmptyPreview() {
 
 @Preview(showBackground = true)
 @Composable
-fun CreateListFilledPreview() {
+fun CreateItemOrTaskScreenFilledPreview() {
     KrugTheme {
         CreateItemOrTaskScreen(
-            title = "Для готовки",
-            items = listOf("Картошка", "Морковка", "Сосиски"),
-            titleError = null,
-            itemErrors = emptyMap(),
-            requestState = RequestState.Idle,
-            isTask = false,
-            onTitleChange = {},
-            onItemChange = { _, _ -> },
-            onAddItem = {},
-            onRemoveItem = {},
-            onCreate = {},
-            onCancel = {}
-        )
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun CreateTaskListFilledPreview() {
-    KrugTheme {
-        CreateItemOrTaskScreen(
-            title = "Для готовки",
-            items = listOf("Почистить картошку", "Порезать картошку", "Сварить картошку"),
-            titleError = null,
-            itemErrors = emptyMap(),
-            requestState = RequestState.Idle,
             isTask = true,
+            title = "Для готовки",
+            items = listOf("Почистить картошку", "Порезать", "Сварить"),
+            titleError = null,
+            itemErrors = emptyMap(),
+            requestState = RequestState.Idle,
             onTitleChange = {},
             onItemChange = { _, _ -> },
             onAddItem = {},

@@ -47,6 +47,7 @@ fun CreateItemOrTaskScreen(
                 value = title,
                 onValueChange = onTitleChange,
                 label = { Text("Название") },
+                singleLine = true,
                 isError = titleError != null,
                 supportingText = { titleError?.let { Text(it) } },
                 modifier = Modifier.fillMaxWidth()
@@ -61,6 +62,7 @@ fun CreateItemOrTaskScreen(
                     value = item,
                     onValueChange = { onItemChange(index, it) },
                     placeholder = { Text("$itemLabel ${index + 1}") },
+                    singleLine = true,
                     isError = itemErrors.containsKey(index),
                     supportingText = { itemErrors[index]?.let { Text(it) } },
                     trailingIcon = {
@@ -93,7 +95,7 @@ fun CreateItemOrTaskScreen(
             }
         }
 
-        Surface(tonalElevation = 8.dp) {
+        Surface {
             Row(
                 modifier = Modifier
                     .fillMaxWidth()

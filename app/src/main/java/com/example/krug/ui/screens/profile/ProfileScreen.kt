@@ -106,7 +106,7 @@ fun ProfileScreen(
                         .padding(16.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    // Аватар (только в режиме просмотра)
+                    // Аватар
                     if (!isEditing) {
                         Box(modifier = Modifier.size(120.dp), contentAlignment = Alignment.Center) {
                             if (avatarUrl != null) {
@@ -129,7 +129,7 @@ fun ProfileScreen(
                         Spacer(Modifier.height(24.dp))
                     }
 
-                    ProfileField("Никнейм", username, isEditing, onUpdateUsername, Icons.Default.AlternateEmail, usernameError != null) {
+                    ProfileField("Никнейм", username, isEditing, onUpdateUsername, Icons.Default.AlternateEmail, usernameError != null, singleLine = true) {
                         when {
                             usernameError != null -> Text(usernameError)
                             isCheckingUsername -> Text("Проверка...", color = MaterialTheme.colorScheme.onSurfaceVariant)
@@ -137,7 +137,7 @@ fun ProfileScreen(
                             usernameAvailable == false && isEditing -> Text("Занят")
                         }
                     }
-                    ProfileField("Имя", displayName, isEditing, onUpdateDisplayName, Icons.Default.Person)
+                    ProfileField("Имя", displayName, isEditing, onUpdateDisplayName, Icons.Default.Person, singleLine = true)
                     if (!isEditing) ProfileField("Электронная почта", email, false, {}, Icons.Default.Email)
 
                     Box(modifier = Modifier.fillMaxWidth().padding(bottom = 12.dp)) {
@@ -160,7 +160,7 @@ fun ProfileScreen(
                             label = { Text("О себе") },
                             enabled = isEditing,
                             readOnly = !isEditing,
-                            maxLines = 6,
+                            maxLines = 3,
                             trailingIcon = { Icon(Icons.Default.Info, contentDescription = null) },
                             colors = outlineTextFieldColors(),
                             modifier = Modifier.fillMaxWidth().heightIn(min = 120.dp)
@@ -218,6 +218,7 @@ private fun ProfileField(
     label: String, value: String, isEditing: Boolean,
     onValueChange: (String) -> Unit, icon: ImageVector,
     isError: Boolean = false,
+    singleLine: Boolean = false,
     supportingText: @Composable (() -> Unit)? = null
 ) {
     OutlinedTextField(
@@ -227,6 +228,7 @@ private fun ProfileField(
         enabled = isEditing,
         readOnly = !isEditing,
         isError = isError,
+        singleLine = singleLine,
         supportingText = supportingText,
         trailingIcon = { Icon(icon, contentDescription = null, tint = MaterialTheme.colorScheme.onSurfaceVariant) },
         colors = outlineTextFieldColors(),

@@ -420,6 +420,7 @@ fun SetupNavGraph() {
             val canDelete by viewModel.canDelete.collectAsStateWithLifecycle()
             val canManageMembers by viewModel.canManageMembers.collectAsStateWithLifecycle()
             val canToggleAdmin by viewModel.canToggleAdmin.collectAsStateWithLifecycle()
+            val avatarRefreshKey by viewModel.avatarRefreshKey.collectAsStateWithLifecycle()
 
             LaunchedEffect(Unit) {
                 viewModel.navigationEvents.collect { event ->
@@ -457,7 +458,8 @@ fun SetupNavGraph() {
                 onDismissDeleteDialog = { viewModel.onDismissDeleteDialog() },
                 onConfirmDelete = { viewModel.onConfirmDelete() },
                 onRemoveMemberClick = { userId -> viewModel.removeMember(userId) },
-                onToggleAdminClick = { member -> viewModel.toggleAdmin(member) }
+                onToggleAdminClick = { member -> viewModel.toggleAdmin(member) },
+                avatarRefreshKey = avatarRefreshKey
             )
         }
 
@@ -476,6 +478,7 @@ fun SetupNavGraph() {
             LaunchedEffect(Unit) {
                 viewModel.navigationEvents.collect {
                     detailViewModel.loadEvent()
+                    detailViewModel.onAvatarUploaded()
                     navController.popBackStack()
                 }
             }
@@ -490,7 +493,8 @@ fun SetupNavGraph() {
                 showBackButton = true,
                 onSetAvatarUri = { viewModel.setAvatarUri(it) },
                 onUploadClick = { viewModel.uploadAvatar() },
-                onSkipClick = { viewModel.skip() }
+                onSkipClick = { viewModel.skip() },
+                onBackClick = { navController.popBackStack() }
             )
         }
 

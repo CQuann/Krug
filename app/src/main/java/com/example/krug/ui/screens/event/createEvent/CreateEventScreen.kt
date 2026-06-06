@@ -49,18 +49,18 @@ fun CreateEventScreen(
                 modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp)
             )
 
-            // ui/screens/event/createEvent/CreateEventScreen.kt (фрагмент формы)
             Column(
                 modifier = Modifier
                     .weight(1f)
                     .verticalScroll(rememberScrollState())
                     .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp)   // единый отступ между полями
+                verticalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 OutlinedTextField(
                     value = formData.title,
                     onValueChange = onTitleChange,
                     label = { Text("Название *") },
+                    singleLine = true,
                     isError = titleError != null,
                     supportingText = titleError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth()
@@ -70,6 +70,7 @@ fun CreateEventScreen(
                     value = formData.location,
                     onValueChange = onLocationChange,
                     label = { Text("Местоположение") },
+                    singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
 

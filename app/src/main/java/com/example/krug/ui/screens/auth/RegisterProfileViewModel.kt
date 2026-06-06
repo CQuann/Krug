@@ -1,6 +1,5 @@
 package com.example.krug.ui.screens.auth
 
-import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.example.krug.data.local.SessionManager
@@ -70,7 +69,7 @@ class RegisterProfileViewModel @Inject constructor(
         _username.value = name
         _usernameError.value = when {
             name.isBlank() -> "Введите никнейм"
-            name.length < 3 -> "Слишком короткий никнейм (мин. 3 символа)"
+            name.length < 5 -> "Слишком короткий никнейм (мин. 5 символов)"
             else -> null
         }
         checkUsername(name)
@@ -86,7 +85,7 @@ class RegisterProfileViewModel @Inject constructor(
 
     private fun checkUsername(username: String) {
         checkUsernameJob?.cancel()
-        if (username.isBlank() || username.length < 3) {
+        if (username.isBlank() || username.length < 5) {
             _usernameAvailable.value = null
             _isCheckingUsername.value = false
             return
@@ -111,7 +110,7 @@ class RegisterProfileViewModel @Inject constructor(
         if (_username.value.isBlank()) {
             _usernameError.value = "Введите никнейм"
             hasError = true
-        } else if (_username.value.length < 3) {
+        } else if (_username.value.length < 5) {
             _usernameError.value = "Слишком короткий никнейм"
             hasError = true
         } else if (_usernameAvailable.value != true) {

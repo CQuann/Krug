@@ -39,8 +39,6 @@ class EventPlanningViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    init { loadModules() }
-
     fun loadModules(isRefresh: Boolean = false) {
         viewModelScope.launch {
             if (!isRefresh) _uiState.value = PlanningUiState.Loading

@@ -53,6 +53,13 @@ class EventDetailViewModel @Inject constructor(
     private val _snackbarEvents = MutableSharedFlow<String>()
     val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
 
+    private val _avatarRefreshKey = MutableStateFlow(0L)
+    val avatarRefreshKey: StateFlow<Long> = _avatarRefreshKey.asStateFlow()
+
+    fun onAvatarUploaded() {
+        _avatarRefreshKey.value++
+    }
+
     init { loadEvent() }
 
     fun loadEvent() {

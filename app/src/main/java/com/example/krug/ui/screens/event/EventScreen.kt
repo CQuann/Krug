@@ -55,12 +55,12 @@ fun EventScreen(
                 TopAppBar(
                     title = {
                         Row(
-                            modifier = Modifier.clickable { onHeaderClick() },
+                            modifier = Modifier.fillMaxWidth().clickable { onHeaderClick() },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(modifier = Modifier.size(36.dp)) {
+                            Box(modifier = Modifier.size(40.dp)) {
                                 AsyncImage(
-                                    model = "${Constants.BASE_URL}/event-avatars/${event?.eventId}",
+                                    model = "${Constants.BASE_URL}/event-avatars/${eventId}",
                                     contentDescription = null,
                                     modifier = Modifier
                                         .fillMaxSize()
@@ -68,7 +68,7 @@ fun EventScreen(
                                     contentScale = ContentScale.Crop
                                 )
                             }
-                            Spacer(modifier = Modifier.width(8.dp))
+                            Spacer(modifier = Modifier.width(16.dp))
                             Text(
                                 text = event?.title ?: "Загрузка...",
                                 style = MaterialTheme.typography.titleMedium
@@ -102,13 +102,14 @@ fun EventScreen(
                 }
 
                 RequestState.Idle, RequestState.Success -> {
-                    val tabs = listOf("Чат", "Планирование", "Альбом")
+                    val tabs = listOf("Чат", "План", "Альбом")
                     val pagerState = rememberPagerState(pageCount = { tabs.size })
 
                     if (!isFullScreen) {
                         SecondaryTabRow(selectedTabIndex = pagerState.currentPage) {
                             tabs.forEachIndexed { index, title ->
                                 Tab(
+
                                     selected = pagerState.currentPage == index,
                                     onClick = {
                                         coroutineScope.launch {
@@ -123,7 +124,8 @@ fun EventScreen(
 
                     HorizontalPager(
                         state = pagerState,
-                        modifier = Modifier.fillMaxSize()
+                        modifier = Modifier.fillMaxSize(),
+                        userScrollEnabled = !isFullScreen
                     ) { page ->
                         when (page) {
                             0 -> EmptyTabPlaceholder("Чат", Icons.AutoMirrored.Filled.Chat)

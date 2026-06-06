@@ -59,6 +59,7 @@ fun CreatePollScreen(
                     value = title,
                     onValueChange = onQuestionChange,
                     label = { Text("Вопрос") },
+                    singleLine = true,
                     isError = titleError != null,
                     supportingText = { titleError?.let { Text(it) } },
                     modifier = Modifier.fillMaxWidth()
@@ -82,6 +83,7 @@ fun CreatePollScreen(
                         value = option,
                         onValueChange = { onOptionChange(index, it) },
                         placeholder = { Text("Вариант ${index + 1}") },
+                        singleLine = true,
                         isError = optionErrors.containsKey(index),
                         supportingText = { optionErrors[index]?.let { Text(it) } },
                         trailingIcon = {
@@ -114,7 +116,7 @@ fun CreatePollScreen(
                 }
             }
 
-            Surface(tonalElevation = 8.dp) {
+            Surface() {
                 Row(
                     modifier = Modifier
                         .fillMaxWidth()

@@ -62,6 +62,7 @@ fun RegisterProfileScreen(
                     value = displayName,
                     onValueChange = onDisplayNameChange,
                     label = { Text("Имя") },
+                    singleLine = true,
                     isError = displayNameError != null,
                     supportingText = displayNameError?.let { { Text(it, color = MaterialTheme.colorScheme.error) } },
                     modifier = Modifier.fillMaxWidth()
@@ -72,6 +73,7 @@ fun RegisterProfileScreen(
                     value = username,
                     onValueChange = onUsernameChange,
                     label = { Text("Никнейм") },
+                    singleLine = true,
                     isError = usernameError != null,
                     supportingText = {
                         when {
@@ -108,7 +110,7 @@ fun RegisterProfileScreen(
             }
 
             // Кнопка приклеена к низу
-            Surface(tonalElevation = 8.dp) {
+            Surface {
                 Column(modifier = Modifier.padding(horizontal = 24.dp, vertical = 16.dp)) {
                     if (requestState is RequestState.Error) {
                         Text(

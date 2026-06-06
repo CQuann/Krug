@@ -72,7 +72,7 @@ fun LoginEmailScreen(
             }
 
             // Кнопка приклеена к низу
-            Surface(tonalElevation = 8.dp) {
+            Surface {
                 Button(
                     onClick = onSendCode,
                     enabled = requestState !is RequestState.Loading && emailError == null,

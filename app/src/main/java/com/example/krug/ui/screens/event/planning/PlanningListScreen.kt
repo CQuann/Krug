@@ -3,6 +3,8 @@ package com.example.krug.ui.screens.event.planning
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
@@ -61,7 +63,7 @@ fun PlanningListScreen(
                     }
                     is PlanningUiState.Error -> {
                         Column(
-                            Modifier.fillMaxSize().padding(16.dp),
+                            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
                             horizontalAlignment = Alignment.CenterHorizontally,
                             verticalArrangement = Arrangement.Center
                         ) {
@@ -70,7 +72,11 @@ fun PlanningListScreen(
                     }
                     is PlanningUiState.Content -> {
                         if (uiState.modules.isEmpty()) {
-                            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                            Column(
+                                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                                horizontalAlignment = Alignment.CenterHorizontally,
+                                verticalArrangement = Arrangement.Center
+                            ) {
                                 Text("Модули планирования пока не добавлены")
                             }
                         } else {

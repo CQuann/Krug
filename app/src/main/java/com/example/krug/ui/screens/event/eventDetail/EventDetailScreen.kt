@@ -103,7 +103,8 @@ fun EventDetailScreen(
     onDismissDeleteDialog: () -> Unit,
     onConfirmDelete: () -> Unit,
     onRemoveMemberClick: (String) -> Unit,
-    onToggleAdminClick: (Member) -> Unit
+    onToggleAdminClick: (Member) -> Unit,
+    avatarRefreshKey: Long = 0L
 ) {
 
     val snackbarHostState = remember { SnackbarHostState() }
@@ -168,7 +169,7 @@ fun EventDetailScreen(
                 ) {
                     // Аватар события
                     event?.eventId?.let {
-                        val avatarUrl = "${Constants.BASE_URL}/event-avatars/$it"
+                        val avatarUrl = "${Constants.BASE_URL}/event-avatars/$it?v=$avatarRefreshKey"
                         Box(modifier = Modifier.size(120.dp)) {
                             AsyncImage(
                                 model = avatarUrl,
@@ -258,7 +259,7 @@ fun EventDetailScreen(
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     AsyncImage(
-                                        model = "${Constants.BASE_URL}/avatars/$member.userId",
+                                        model = "${Constants.BASE_URL}/avatars/${member.userId}",
                                         contentDescription = null,
                                         modifier = Modifier
                                             .size(32.dp)

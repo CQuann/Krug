@@ -36,6 +36,10 @@ fun PlanningNavGraph(eventId: String, onFullScreenMode: (Boolean) -> Unit) {
             val currentUserId = viewModel.getCurrentUserId()
             val isRefreshing by viewModel.isRefreshing.collectAsStateWithLifecycle()
 
+            LaunchedEffect(Unit) {
+                viewModel.loadModules()
+            }
+
             PlanningListScreen(
                 uiState = uiState,
                 showTypeDialog = showTypeDialog,

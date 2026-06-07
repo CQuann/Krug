@@ -1,0 +1,34 @@
+<svg width="200" height="200" viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg">
+<circle cx="150" cy="100" r="50" fill="#F580B4"/>
+<circle cx="100" cy="150" r="50" fill="#64D7AC"/>
+<circle cx="50" cy="100" r="50" fill="#FF8202"/>
+<circle cx="100" cy="50" r="50" fill="#F9DA7E"/>
+<rect x="89" y="37" width="22" height="22" fill="white"/>
+<circle cx="150" cy="100" r="13" fill="white"/>
+<path d="M100.5 143L114.789 167.75H86.2106L100.5 143Z" fill="white"/>
+<path d="M49.5 84L65 99.5L49.5 115L34 99.5L49.5 84Z" fill="white"/>
+<mask id="mask0_167_15547" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="100" y="50" width="100" height="100">
+<circle cx="50" cy="50" r="50" transform="matrix(1 0 0 -1 100 150)" fill="#40FFB7"/>
+</mask>
+<g mask="url(#mask0_167_15547)">
+<circle cx="50" cy="50" r="50" transform="matrix(1 0 0 -1 50 200)" fill="#40FFB7"/>
+</g>
+<mask id="mask1_167_15547" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="50" width="100" height="100">
+<circle cx="50" cy="100" r="50" transform="rotate(180 50 100)" fill="#FF600A"/>
+</mask>
+<g mask="url(#mask1_167_15547)">
+<circle cx="100" cy="150" r="50" transform="rotate(180 100 150)" fill="#FF600A"/>
+</g>
+<mask id="mask2_167_15547" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="100" y="50" width="100" height="100">
+<circle cx="150" cy="100" r="50" fill="#FF4D9C"/>
+</mask>
+<g mask="url(#mask2_167_15547)">
+<circle cx="100" cy="50" r="50" fill="#FF4D9C"/>
+</g>
+<mask id="mask3_167_15547" style="mask-type:alpha" maskUnits="userSpaceOnUse" x="0" y="50" width="100" height="100">
+<circle cx="50" cy="50" r="50" transform="matrix(-1 0 0 1 100 50)" fill="#FFAD16"/>
+</mask>
+<g mask="url(#mask3_167_15547)">
+<circle cx="50" cy="50" r="50" transform="matrix(-1 0 0 1 150 0)" fill="#FFAD16"/>
+</g>
+</svg>

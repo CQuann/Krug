@@ -1,13 +1,17 @@
 package com.example.krug.ui.screens.auth
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.*
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import com.example.krug.R
 import com.example.krug.data.model.RequestState
 import com.example.krug.ui.components.CodeInputField
 import com.example.krug.ui.theme.KrugTheme
@@ -35,71 +39,81 @@ fun VerifyCodeScreen(
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) }
     ) { padding ->
-        Column(
-            modifier = Modifier
-                .fillMaxSize()
-                .padding(padding)
-                .padding(horizontal = 24.dp),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            Text(
-                text = "Код подтверждения",
-                style = MaterialTheme.typography.headlineMedium,
-                color = MaterialTheme.colorScheme.onBackground
+        Box(modifier = Modifier.fillMaxSize()) {
+            Image(
+                painter = painterResource(id = R.drawable.bg_verify_code_screen),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
             )
-            Spacer(Modifier.height(12.dp))
-            Text(
-                text = "Мы отправили код на $email",
-                style = MaterialTheme.typography.bodyLarge,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                textAlign = TextAlign.Center
-            )
-            Spacer(Modifier.height(36.dp))
-
-            CodeInputField(
-                length = 6,
-                onCodeChanged = { /* ошибка сбрасывается во ViewModel */ },
-                onCodeCompleted = onCodeCompleted
-            )
-
-            Spacer(Modifier.height(24.dp))
-
-            if (requestState is RequestState.Error) {
+            Column(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(padding)
+                    .padding(horizontal = 24.dp),
+                verticalArrangement = Arrangement.Center,
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Spacer(Modifier.height(180.dp))
                 Text(
-                    text = requestState.message,
-                    color = MaterialTheme.colorScheme.error,
-                    style = MaterialTheme.typography.bodyMedium,
+                    text = "Код подтверждения",
+                    style = MaterialTheme.typography.headlineMedium,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                Spacer(Modifier.height(12.dp))
+                Text(
+                    text = "Мы отправили код на $email",
+                    style = MaterialTheme.typography.bodyLarge,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     textAlign = TextAlign.Center
                 )
-                Spacer(Modifier.height(12.dp))
-            }
+                Spacer(Modifier.height(36.dp))
 
-            if (requestState is RequestState.Loading) {
-                CircularProgressIndicator(
-                    modifier = Modifier.size(24.dp),
-                    color = MaterialTheme.colorScheme.primary
+                CodeInputField(
+                    length = 6,
+                    onCodeChanged = { /* ошибка сбрасывается во ViewModel */ },
+                    onCodeCompleted = onCodeCompleted
                 )
-                Spacer(Modifier.height(12.dp))
-            }
 
-            Spacer(Modifier.height(16.dp))
+                Spacer(Modifier.height(24.dp))
 
-            // Кнопка повторной отправки
-            if (canResend) {
-                TextButton(onClick = onResendCode) {
+                if (requestState is RequestState.Error) {
                     Text(
-                        "Отправить код повторно",
-                        color = MaterialTheme.colorScheme.primary,
-                        style = MaterialTheme.typography.labelLarge
+                        text = requestState.message,
+                        color = MaterialTheme.colorScheme.error,
+                        style = MaterialTheme.typography.bodyMedium,
+                        textAlign = TextAlign.Center
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
+
+                if (requestState is RequestState.Loading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(24.dp),
+                        color = MaterialTheme.colorScheme.primary
+                    )
+                    Spacer(Modifier.height(12.dp))
+                }
+
+                Spacer(Modifier.height(16.dp))
+
+                // Кнопка повторной отправки
+                if (canResend) {
+                    TextButton(onClick = onResendCode) {
+                        Text(
+                            "Отправить код повторно",
+                            color = MaterialTheme.colorScheme.primary,
+                            style = MaterialTheme.typography.labelLarge
+                        )
+                    }
+                } else {
+                    Text(
+                        text = "Повторная отправка через ${resendCooldown} сек.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                     )
                 }
-            } else {
-                Text(
-                    text = "Повторная отправка через ${resendCooldown} сек.",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
-                )
+                Spacer(Modifier.weight(1f))
             }
         }
     }

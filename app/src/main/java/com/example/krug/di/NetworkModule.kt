@@ -3,10 +3,7 @@ package com.example.krug.di
 import android.content.Context
 import com.example.krug.data.model.planning.PlanningModule
 import com.example.krug.data.model.planning.PlanningModuleDeserializer
-import com.example.krug.data.network.AlbumApi
-import com.example.krug.data.network.AuthApi
-import com.example.krug.data.network.EventApi
-import com.example.krug.data.network.PlanningApi
+import com.example.krug.data.network.*
 import com.example.krug.utils.Constants.BASE_URL
 import com.google.gson.GsonBuilder
 import dagger.Module
@@ -26,16 +23,20 @@ import javax.inject.Singleton
 @InstallIn(SingletonComponent::class)
 object NetworkModule {
 
-
     @Provides
     @Singleton
-    fun provideOkHttpClient(authInterceptor: AuthInterceptor, @ApplicationContext context: Context): OkHttpClient {
+    fun provideOkHttpClient(
+        authInterceptor: AuthInterceptor,
+        @ApplicationContext context: Context
+    ): OkHttpClient {
         val cacheDir = File(context.cacheDir, "http_cache")
-        val cache = Cache(cacheDir, 50L * 1024 * 1024) // 50 МБ
+        val cache = Cache(cacheDir, 50L * 1024 * 1024)
 
         return OkHttpClient.Builder()
             .addInterceptor(authInterceptor)
-            .addInterceptor(HttpLoggingInterceptor().apply { level = HttpLoggingInterceptor.Level.BODY })
+            .addInterceptor(HttpLoggingInterceptor().apply {
+                level = HttpLoggingInterceptor.Level.BODY
+            })
             .cache(cache)
             .build()
     }
@@ -56,25 +57,17 @@ object NetworkModule {
 
     @Provides
     @Singleton
-    fun provideAuthApi(retrofit: Retrofit): AuthApi {
-        return retrofit.create(AuthApi::class.java)
-    }
+    fun provideAuthApi(retrofit: Retrofit): AuthApi = retrofit.create(AuthApi::class.java)
 
     @Provides
     @Singleton
-    fun provideEventApi(retrofit: Retrofit): EventApi {
-        return retrofit.create(EventApi::class.java)
-    }
+    fun provideEventApi(retrofit: Retrofit): EventApi = retrofit.create(EventApi::class.java)
 
     @Provides
     @Singleton
-    fun providePlanningApi(retrofit: Retrofit): PlanningApi {
-        return retrofit.create(PlanningApi::class.java)
-    }
+    fun providePlanningApi(retrofit: Retrofit): PlanningApi = retrofit.create(PlanningApi::class.java)
 
     @Provides
     @Singleton
-    fun provideAlbumApi(retrofit: Retrofit): AlbumApi {
-        return retrofit.create(AlbumApi::class.java)
-    }
+    fun provideAlbumApi(retrofit: Retrofit): AlbumApi = retrofit.create(AlbumApi::class.java)
 }

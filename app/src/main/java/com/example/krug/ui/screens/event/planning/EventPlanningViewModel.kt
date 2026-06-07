@@ -21,9 +21,6 @@ class EventPlanningViewModel @Inject constructor(
 
     private val eventId: String = savedStateHandle.get<String>("eventId") ?: ""
 
-    private val _snackbarEvents = MutableSharedFlow<String>()
-    val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
-
     sealed class PlanningUiState {
         object Loading : PlanningUiState()
         data class Content(val modules: List<PlanningModule>) : PlanningUiState()
@@ -39,16 +36,31 @@ class EventPlanningViewModel @Inject constructor(
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
+    private val _snackbarEvents = MutableSharedFlow<String>()
+    val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
+
+    private var lastModules: List<PlanningModule>? = null
+
+    init { loadModules() }
+
     fun loadModules(isRefresh: Boolean = false) {
         viewModelScope.launch {
-            if (!isRefresh) _uiState.value = PlanningUiState.Loading
+            if (!isRefresh && lastModules == null) {
+                _uiState.value = PlanningUiState.Loading
+            }
             when (val result = planningRepository.getPlanningModules(eventId)) {
-                is DataResult.Success -> _uiState.value = PlanningUiState.Content(result.data.modules)
+                is DataResult.Success -> {
+                    lastModules = result.data.modules
+                    _uiState.value = PlanningUiState.Content(lastModules!!)
+                }
                 is DataResult.Error -> {
-                    _uiState.value = PlanningUiState.Error(result.message)
+                    if (lastModules == null) {
+                        _uiState.value = PlanningUiState.Error(result.message)
+                    }
                     _snackbarEvents.emit(result.message)
                 }
             }
+            if (isRefresh) _isRefreshing.value = false
         }
     }
 
@@ -56,7 +68,6 @@ class EventPlanningViewModel @Inject constructor(
         viewModelScope.launch {
             _isRefreshing.value = true
             loadModules(isRefresh = true)
-            _isRefreshing.value = false
         }
     }
 

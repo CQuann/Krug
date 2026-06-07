@@ -36,10 +36,7 @@ fun PlanningListScreen(
     onCompleteTask: (String, String, Boolean) -> Unit
 ) {
     val snackbarHostState = remember { SnackbarHostState() }
-
-    LaunchedEffect(Unit) {
-        snackbarEvents.collect { msg -> snackbarHostState.showSnackbar(msg) }
-    }
+    LaunchedEffect(Unit) { snackbarEvents.collect { snackbarHostState.showSnackbar(it) } }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -54,56 +51,19 @@ fun PlanningListScreen(
             onRefresh = onRefresh,
             modifier = Modifier.fillMaxSize()
         ) {
-            Box(modifier = Modifier.fillMaxSize().padding(padding)) {
-                when (uiState) {
-                    is PlanningUiState.Loading -> {
-                        Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
-                            CircularProgressIndicator()
-                        }
-                    }
-                    is PlanningUiState.Error -> {
-                        Column(
-                            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text(uiState.message, color = MaterialTheme.colorScheme.error)
-                        }
-                    }
-                    is PlanningUiState.Content -> {
-                        if (uiState.modules.isEmpty()) {
-                            Column(
-                                modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                                horizontalAlignment = Alignment.CenterHorizontally,
-                                verticalArrangement = Arrangement.Center
-                            ) {
-                                Text("Модули планирования пока не добавлены")
-                            }
-                        } else {
-                            LazyColumn(
-                                modifier = Modifier.fillMaxSize(),
-                                contentPadding = PaddingValues(16.dp),
-                                verticalArrangement = Arrangement.spacedBy(8.dp)
-                            ) {
-                                items(uiState.modules) { module ->
-                                    when (module.type) {
-                                        "poll" -> PollModuleCard(
-                                            module = module,
-                                            onVote = { pollId, indexes -> onVotePoll(pollId, indexes) }
-                                        )
-                                        "item_list" -> ItemListModuleCard(
-                                            module = module,
-                                            currentUserId = currentUserId,
-                                            onAssign = { type, mId, iId, assign -> onAssignItem(type, mId, iId, assign) },
-                                            onComplete = null
-                                        )
-                                        "task_list" -> ItemListModuleCard(
-                                            module = module,
-                                            currentUserId = currentUserId,
-                                            onAssign = { type, mId, iId, assign -> onAssignItem(type, mId, iId, assign) },
-                                            onComplete = { mId, iId, completed -> onCompleteTask(mId, iId, completed) }
-                                        )
-                                    }
+            when (uiState) {
+                is PlanningUiState.Loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                is PlanningUiState.Error -> Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Text(uiState.message, color = MaterialTheme.colorScheme.error) }
+                is PlanningUiState.Content -> {
+                    if (uiState.modules.isEmpty()) {
+                        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Text("Модули планирования пока не добавлены") }
+                    } else {
+                        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                            items(uiState.modules) { module ->
+                                when (module.type) {
+                                    "poll" -> PollModuleCard(module = module, onVote = { pollId, indexes -> onVotePoll(pollId, indexes) })
+                                    "item_list" -> ItemListModuleCard(module = module, currentUserId = currentUserId, onAssign = { type, mId, iId, assign -> onAssignItem(type, mId, iId, assign) }, onComplete = null)
+                                    "task_list" -> ItemListModuleCard(module = module, currentUserId = currentUserId, onAssign = { type, mId, iId, assign -> onAssignItem(type, mId, iId, assign) }, onComplete = { mId, iId, completed -> onCompleteTask(mId, iId, completed) })
                                 }
                             }
                         }

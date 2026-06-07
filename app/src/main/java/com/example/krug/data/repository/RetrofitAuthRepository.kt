@@ -3,9 +3,13 @@ package com.example.krug.data.repository
 import android.content.Context
 import android.net.Uri
 import android.util.Log
+import coil.ImageLoader
+import coil.memory.MemoryCache
+import com.example.krug.data.local.SessionManager
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.auth.*
 import com.example.krug.data.network.AuthApi
+import com.example.krug.utils.Constants
 import com.example.krug.utils.ImageUtils
 import com.example.krug.utils.NetworkUtils.parseErrorMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -18,6 +22,8 @@ import javax.inject.Singleton
 @Singleton
 class RetrofitAuthRepository @Inject constructor(
     private val authApi: AuthApi,
+    private val sessionManager: SessionManager,
+    private val imageLoader: ImageLoader,
     @ApplicationContext private val context: Context
 ) : AuthRepository {
 
@@ -138,9 +144,16 @@ class RetrofitAuthRepository @Inject constructor(
             val requestBody = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("avatar", compressedFile.name, requestBody)
             val response = authApi.uploadAvatar(part)
-            Log.d("Avatar upload", response.toString())
-            if (response.success) DataResult.Success(Unit)
-            else DataResult.Error(response.error ?: "Ошибка загрузки")
+            if (response.success) {
+                val userId = sessionManager.cachedUserId
+                if (userId != null) {
+                    val avatarUrl = "${Constants.BASE_URL}/avatars/$userId"
+                    imageLoader.memoryCache?.remove(MemoryCache.Key(avatarUrl))
+                }
+                DataResult.Success(Unit)
+            } else {
+                DataResult.Error(response.error ?: "Ошибка загрузки")
+            }
         } catch (e: Exception) {
             DataResult.Error(parseErrorMessage(e))
         }

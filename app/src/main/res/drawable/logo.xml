@@ -1,0 +1,58 @@
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="200dp"
+    android:height="200dp"
+    android:viewportWidth="200"
+    android:viewportHeight="200">
+  <path
+      android:pathData="M150,100m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0"
+      android:fillColor="#F580B4"/>
+  <path
+      android:pathData="M100,150m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0"
+      android:fillColor="#64D7AC"/>
+  <path
+      android:pathData="M50,100m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0"
+      android:fillColor="#FF8202"/>
+  <path
+      android:pathData="M100,50m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0"
+      android:fillColor="#F9DA7E"/>
+  <path
+      android:pathData="M89,37h22v22h-22z"
+      android:fillColor="#ffffff"/>
+  <path
+      android:pathData="M150,100m-13,0a13,13 0,1 1,26 0a13,13 0,1 1,-26 0"
+      android:fillColor="#ffffff"/>
+  <path
+      android:pathData="M100.5,143L114.79,167.75H86.21L100.5,143Z"
+      android:fillColor="#ffffff"/>
+  <path
+      android:pathData="M49.5,84L65,99.5L49.5,115L34,99.5L49.5,84Z"
+      android:fillColor="#ffffff"/>
+  <group>
+    <clip-path
+        android:pathData="M150,100m-50,-0a50,50 0,1 0,100 -0a50,50 0,1 0,-100 -0"/>
+    <path
+        android:pathData="M100,150m-50,-0a50,50 0,1 0,100 -0a50,50 0,1 0,-100 -0"
+        android:fillColor="#40FFB7"/>
+  </group>
+  <group>
+    <clip-path
+        android:pathData="M50,100m50,-0a50,50 0,1 1,-100 -0a50,50 0,1 1,100 -0"/>
+    <path
+        android:pathData="M100,150m50,-0a50,50 0,1 1,-100 -0a50,50 0,1 1,100 -0"
+        android:fillColor="#FF600A"/>
+  </group>
+  <group>
+    <clip-path
+        android:pathData="M150,100m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0"/>
+    <path
+        android:pathData="M100,50m-50,0a50,50 0,1 1,100 0a50,50 0,1 1,-100 0"
+        android:fillColor="#FF4D9C"/>
+  </group>
+  <group>
+    <clip-path
+        android:pathData="M50,100m50,0a50,50 0,1 0,-100 0a50,50 0,1 0,100 0"/>
+    <path
+        android:pathData="M100,50m50,0a50,50 0,1 0,-100 0a50,50 0,1 0,100 0"
+        android:fillColor="#FFAD16"/>
+  </group>
+</vector>

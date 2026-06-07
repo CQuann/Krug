@@ -1,6 +1,7 @@
 package com.example.krug.ui.screens.main
 
 import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -13,7 +14,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Celebration
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.*
 import androidx.compose.material3.pulltorefresh.PullToRefreshBox
@@ -96,11 +96,12 @@ fun MainAppScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = { Text("Krug", color = MaterialTheme.colorScheme.onBackground) },
+                title = {},
                 actions = {
                     Box(
                         modifier = Modifier
-                            .size(40.dp)
+                            .padding(8.dp)
+                            .size(45.dp)
                             .clip(CircleShape)
                             .clickable { onEditProfileClick() }
                     ) {
@@ -215,11 +216,10 @@ fun MainAppScreen(
                                 color = MaterialTheme.colorScheme.primary,
                                 modifier = Modifier.weight(1f)
                             )
-                            Icon(
-                                Icons.Default.Celebration,
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.primary,
-                                modifier = Modifier.size(32.dp)
+                            Image(
+                                painter = painterResource(R.drawable.invite_celebration),
+                                contentDescription = "Логотип",
+                                modifier = Modifier.size(50.dp)
                             )
                         }
                     },

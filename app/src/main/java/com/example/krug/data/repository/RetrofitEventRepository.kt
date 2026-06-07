@@ -2,9 +2,12 @@ package com.example.krug.data.repository
 
 import android.content.Context
 import android.net.Uri
+import coil.ImageLoader
+import coil.memory.MemoryCache
 import com.example.krug.data.model.DataResult
 import com.example.krug.data.model.event.*
 import com.example.krug.data.network.EventApi
+import com.example.krug.utils.Constants
 import com.example.krug.utils.ImageUtils
 import com.example.krug.utils.NetworkUtils.parseErrorMessage
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -17,6 +20,7 @@ import javax.inject.Singleton
 @Singleton
 class RetrofitEventRepository @Inject constructor(
     private val eventApi: EventApi,
+    private val imageLoader: ImageLoader,
     @ApplicationContext private val context: Context
 ) : EventRepository {
 
@@ -88,8 +92,13 @@ class RetrofitEventRepository @Inject constructor(
             val requestBody = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("avatar", compressedFile.name, requestBody)
             val response = eventApi.uploadEventAvatar(eventId, part)
-            if (response.success) DataResult.Success(Unit)
-            else DataResult.Error(response.error ?: "Неизвестная ошибка")
+            if (response.success) {
+                val eventAvatarUrl = "${Constants.BASE_URL}/event-avatars/$eventId"
+                imageLoader.memoryCache?.remove(MemoryCache.Key(eventAvatarUrl))
+                DataResult.Success(Unit)
+            } else {
+                DataResult.Error(response.error ?: "Неизвестная ошибка")
+            }
         } catch (e: Exception) {
             DataResult.Error(parseErrorMessage(e))
         }

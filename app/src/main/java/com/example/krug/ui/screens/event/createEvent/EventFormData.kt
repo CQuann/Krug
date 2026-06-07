@@ -11,5 +11,5 @@ data class EventFormData(
     val startTime: LocalTime? = null,
     val endDate: LocalDate? = null,
     val endTime: LocalTime? = null,
-    val color: String = "#FF5733"
+    val color: String = "#FFE165"
 )

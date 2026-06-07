@@ -65,7 +65,9 @@ class RetrofitPlanningRepository @Inject constructor(
         eventId: String, type: String, moduleId: String, itemId: String, assign: Boolean
     ): DataResult<Unit> {
         return try {
-            val response = api.assignItem(eventId, type, moduleId, itemId, AssignRequest(assign))
+            val response = api.assignItem(
+                eventId, type, moduleId, itemId,
+                if (type == "task_list") "tasks" else "items",AssignRequest(assign))
             if (response.success) Success(Unit)
             else Error(response.error ?: "Ошибка бронирования")
         } catch (e: Exception) {

@@ -38,17 +38,18 @@ interface PlanningApi {
     ): ApiResponse
 
     // Бронирование / отказ от бронирования (вещи и задачи)
-    @PATCH("events/{eventId}/planning/{type}/{moduleId}/items/{itemId}/assign")
+    @PATCH("events/{eventId}/planning/{type}/{moduleId}/{typeForId}/{itemId}/assign")
     suspend fun assignItem(
         @Path("eventId") eventId: String,
         @Path("type") type: String,        // "item_list" или "task_list"
         @Path("moduleId") moduleId: String,
+        @Path("typeForId") typeForId: String,
         @Path("itemId") itemId: String,
         @Body request: AssignRequest
     ): ApiResponse
 
     // Отметка о выполнении задачи
-    @PATCH("events/{eventId}/planning/task_list/{moduleId}/items/{itemId}/complete")
+    @PATCH("events/{eventId}/planning/task_list/{moduleId}/tasks/{itemId}/complete")
     suspend fun completeTask(
         @Path("eventId") eventId: String,
         @Path("moduleId") moduleId: String,

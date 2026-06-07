@@ -2,6 +2,7 @@ package com.example.krug.di
 
 import com.example.krug.data.model.planning.PlanningModule
 import com.example.krug.data.model.planning.PlanningModuleDeserializer
+import com.example.krug.data.network.AlbumApi
 import com.example.krug.data.network.AuthApi
 import com.example.krug.data.network.EventApi
 import com.example.krug.data.network.PlanningApi
@@ -62,5 +63,11 @@ object NetworkModule {
     @Singleton
     fun providePlanningApi(retrofit: Retrofit): PlanningApi {
         return retrofit.create(PlanningApi::class.java)
+    }
+
+    @Provides
+    @Singleton
+    fun provideAlbumApi(retrofit: Retrofit): AlbumApi {
+        return retrofit.create(AlbumApi::class.java)
     }
 }

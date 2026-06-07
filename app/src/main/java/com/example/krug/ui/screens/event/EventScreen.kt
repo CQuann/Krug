@@ -8,7 +8,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Chat
-import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -21,6 +20,7 @@ import androidx.compose.ui.unit.dp
 import coil.compose.AsyncImage
 import com.example.krug.data.model.RequestState
 import com.example.krug.data.model.event.Event
+import com.example.krug.ui.screens.event.album.AlbumNavHost
 import com.example.krug.ui.screens.event.planning.PlanningNavGraph
 import com.example.krug.ui.theme.KrugTheme
 import com.example.krug.utils.Constants
@@ -133,8 +133,10 @@ fun EventScreen(
                                 eventId = eventId,
                                 onFullScreenMode = { isFullScreen = it }
                             )
-                            2 -> EmptyTabPlaceholder("Альбом", Icons.Default.PhotoLibrary)
-                        }
+                            2 -> AlbumNavHost(
+                                eventId = eventId,
+                                onFullScreenMode = { isFullScreen = it }
+                            )                        }
                     }
                 }
             }

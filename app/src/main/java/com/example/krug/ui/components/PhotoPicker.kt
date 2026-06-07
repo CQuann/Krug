@@ -1,7 +1,5 @@
 package com.example.krug.ui.components
 
-import android.Manifest
-import android.content.pm.PackageManager
 import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -9,7 +7,6 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CameraAlt
@@ -27,20 +24,21 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Popup
-import androidx.core.content.ContextCompat
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import java.io.File
 import java.io.FileOutputStream
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PhotoPicker(
     currentUri: Uri?,
     onUriSelected: (Uri) -> Unit,
     shape: Shape,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    useBottomSheet: Boolean = false,
+    onDismiss: (() -> Unit)? = null
 ) {
-    var showMenu by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
@@ -49,21 +47,53 @@ fun PhotoPicker(
             onUriSelected(uri)
         }
     }
-
-    val cameraPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { isGranted ->
-        if (isGranted) {
-            cameraLauncher.launch(null)
-        } else {
-            // показываем сообщение, что разрешение не дано
-        }
-    }
-
-
     val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
         uri?.let { onUriSelected(it) }
     }
+
+    if (useBottomSheet) {
+        val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
+        ModalBottomSheet(
+            onDismissRequest = { onDismiss?.invoke() },
+            sheetState = sheetState,
+            shape = shape
+        ) {
+            Column(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(24.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
+            ) {
+                Text("Выберите источник", style = MaterialTheme.typography.titleMedium)
+                Spacer(Modifier.height(20.dp))
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceEvenly
+                ) {
+                    OutlinedButton(onClick = {
+                        cameraLauncher.launch(null)
+                        onDismiss?.invoke()
+                    }) {
+                        Icon(Icons.Default.CameraAlt, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Камера")
+                    }
+                    OutlinedButton(onClick = {
+                        galleryLauncher.launch("image/*")
+                        onDismiss?.invoke()
+                    }) {
+                        Icon(Icons.Default.PhotoLibrary, contentDescription = null)
+                        Spacer(Modifier.width(8.dp))
+                        Text("Галерея")
+                    }
+                }
+            }
+        }
+        return
+    }
+
+    // Старый Popup (аватары, события)
+    var showMenu by remember { mutableStateOf(false) }
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Column(
@@ -123,11 +153,10 @@ fun PhotoPicker(
                     contentAlignment = Alignment.Center
                 ) {
                     Surface(
-
                         modifier = Modifier
                             .fillMaxWidth(0.8f)
                             .padding(16.dp)
-                            .offset(y=140.dp),
+                            .offset(y = 140.dp),
                         shape = RoundedCornerShape(15.dp),
                         tonalElevation = 8.dp
                     ) {
@@ -138,12 +167,7 @@ fun PhotoPicker(
                                     .fillMaxWidth()
                                     .clickable {
                                         showMenu = false
-                                        if (ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA)
-                                            == PackageManager.PERMISSION_GRANTED) {
-                                            cameraLauncher.launch(null)
-                                        } else {
-                                            cameraPermissionLauncher.launch(Manifest.permission.CAMERA)
-                                        }
+                                        cameraLauncher.launch(null)
                                     }
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 verticalAlignment = Alignment.CenterVertically,

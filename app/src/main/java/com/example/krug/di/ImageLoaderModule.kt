@@ -9,7 +9,6 @@ import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
 import dagger.hilt.components.SingletonComponent
 import okhttp3.OkHttpClient
-import java.util.concurrent.TimeUnit
 import javax.inject.Singleton
 
 @Module
@@ -18,14 +17,12 @@ object ImageLoaderModule {
 
     @Provides
     @Singleton
-    fun provideImageLoader(@ApplicationContext context: Context): ImageLoader {
+    fun provideImageLoader(
+        @ApplicationContext context: Context,
+        okHttpClient: OkHttpClient
+    ): ImageLoader {
         return ImageLoader.Builder(context)
-            .okHttpClient(
-                OkHttpClient.Builder()
-                    .connectTimeout(30, TimeUnit.SECONDS)
-                    .readTimeout(30, TimeUnit.SECONDS)
-                    .build()
-            )
+            .okHttpClient(okHttpClient)
             .memoryCache { MemoryCache.Builder(context).maxSizePercent(0.0).build() }
             .diskCache(null)
             .crossfade(true)

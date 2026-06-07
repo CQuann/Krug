@@ -4,13 +4,16 @@ import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.detectVerticalDragGestures
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
 import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
@@ -18,11 +21,13 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -35,6 +40,7 @@ import com.example.krug.ui.theme.KrugTheme
 import com.example.krug.utils.Constants
 import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.flow.SharedFlow
+import kotlin.math.abs
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -43,6 +49,8 @@ fun AlbumDetailScreen(
     canDelete: Boolean,
     fullScreenPhotos: List<PhotoResponse>,
     currentPhotoIndex: Int,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
     snackbarEvents: SharedFlow<String>,
     onBack: () -> Unit,
     onDeleteAlbum: () -> Unit,
@@ -85,7 +93,7 @@ fun AlbumDetailScreen(
             TopAppBar(
                 title = {
                     Text(
-                        text = (uiState as? DetailUiState.Content)?.album?.title ?: "Альбом",
+                        text = (uiState as? DetailUiState.Content)?.album?.title ?: "Загрузка...",
                         style = MaterialTheme.typography.titleMedium
                     )
                 },
@@ -113,47 +121,54 @@ fun AlbumDetailScreen(
             }
         }
     ) { padding ->
-        when (uiState) {
-            is DetailUiState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    contentAlignment = Alignment.Center
-                ) { CircularProgressIndicator() }
-            }
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize().padding(padding)
+        ) {
 
-            is DetailUiState.Error -> {
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(uiState.message, color = MaterialTheme.colorScheme.error)
-                }
-            }
-
-            is DetailUiState.Content -> {
-                val photos = uiState.album.photos
-                if (photos.isEmpty()) {
+            when (uiState) {
+                is DetailUiState.Loading -> {
                     Box(
-                        modifier = Modifier.fillMaxSize().padding(padding),
+                        modifier = Modifier.fillMaxSize(),
+                        contentAlignment = Alignment.Center
+                    ) { CircularProgressIndicator() }
+                }
+
+                is DetailUiState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("Нет фотографий", style = MaterialTheme.typography.bodyLarge)
+                        Text(uiState.message, color = MaterialTheme.colorScheme.error)
                     }
-                } else {
-                    LazyVerticalGrid(
-                        columns = GridCells.Fixed(3),
-                        modifier = Modifier.fillMaxSize().padding(padding),
-                        contentPadding = PaddingValues(8.dp),
-                        horizontalArrangement = Arrangement.spacedBy(4.dp),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        items(photos) { photo ->
-                            PhotoGridItem(
-                                photo = photo,
-                                onClick = {
-                                    onOpenFullScreen(photos, photos.indexOf(photo))
-                                }
-                            )
+                }
+
+                is DetailUiState.Content -> {
+                    val photos = uiState.album.photos
+                    if (photos.isEmpty()) {
+                        Box(
+                            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text("Нет фотографий", style = MaterialTheme.typography.bodyLarge)
+                        }
+                    } else {
+                        LazyVerticalGrid(
+                            columns = GridCells.Fixed(3),
+                            modifier = Modifier.fillMaxSize(),
+                            contentPadding = PaddingValues(8.dp),
+                            horizontalArrangement = Arrangement.spacedBy(4.dp),
+                            verticalArrangement = Arrangement.spacedBy(4.dp)
+                        ) {
+                            items(photos) { photo ->
+                                PhotoGridItem(
+                                    photo = photo,
+                                    onClick = {
+                                        onOpenFullScreen(photos, photos.indexOf(photo))
+                                    }
+                                )
+                            }
                         }
                     }
                 }
@@ -227,6 +242,7 @@ private fun FullScreenViewer(
     val pagerState = rememberPagerState(pageCount = { photos.size }, initialPage = initialPage)
     var showMenu by remember { mutableStateOf(false) }
     val currentPhoto = photos.getOrNull(pagerState.currentPage)
+    var offsetY by remember { mutableStateOf(0f) }
 
     LaunchedEffect(pagerState.currentPage) {
         onPageChanged(pagerState.currentPage)
@@ -236,6 +252,17 @@ private fun FullScreenViewer(
         modifier = Modifier
             .fillMaxSize()
             .background(Color.Black)
+            .pointerInput(Unit) {
+                detectVerticalDragGestures(
+                    onDragEnd = {
+                        if (abs(offsetY) > 150f) onClose()
+                        offsetY = 0f
+                    },
+                    onVerticalDrag = { _, dragAmount ->
+                        offsetY += dragAmount
+                    }
+                )
+            }
     ) {
         HorizontalPager(
             state = pagerState,
@@ -306,8 +333,26 @@ fun AlbumDetailScreenPreview() {
                     createdBy = 5,
                     createdAt = "2024-01-01T12:00:00Z",
                     photos = listOf(
-                        PhotoResponse(10, "10.jpg", "IMG_001.jpg", "image/jpeg", 123456L, 5, "2024-01-01T13:00:00Z", "/events/42/albums/1/photos/10"),
-                        PhotoResponse(11, "11.jpg", "IMG_002.jpg", "image/jpeg", 98765L, 5, "2024-01-01T14:00:00Z", "/events/42/albums/1/photos/11")
+                        PhotoResponse(
+                            10,
+                            "10.jpg",
+                            "IMG_001.jpg",
+                            "image/jpeg",
+                            123456L,
+                            5,
+                            "2024-01-01T13:00:00Z",
+                            "/events/42/albums/1/photos/10"
+                        ),
+                        PhotoResponse(
+                            11,
+                            "11.jpg",
+                            "IMG_002.jpg",
+                            "image/jpeg",
+                            98765L,
+                            5,
+                            "2024-01-01T14:00:00Z",
+                            "/events/42/albums/1/photos/11"
+                        )
                     )
                 )
             ),
@@ -322,7 +367,9 @@ fun AlbumDetailScreenPreview() {
             onOpenFullScreen = { _, _ -> },
             onCloseFullScreen = {},
             onPageChanged = {},
-            onDownloadCurrentPhoto = {}
+            onDownloadCurrentPhoto = {},
+            isRefreshing = false,
+            onRefresh = {}
         )
     }
 }
@@ -348,7 +395,9 @@ fun AlbumDetailScreenFullScreenPreview() {
             onOpenFullScreen = { _, _ -> },
             onCloseFullScreen = {},
             onPageChanged = {},
-            onDownloadCurrentPhoto = {}
+            onDownloadCurrentPhoto = {},
+            isRefreshing = false,
+            onRefresh = {}
         )
     }
 }

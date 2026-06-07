@@ -36,6 +36,17 @@ class AlbumListViewModel @Inject constructor(
     private val _snackbarEvents = MutableSharedFlow<String>()
     val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    fun refreshAlbums() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            loadAlbums()
+            _isRefreshing.value = false
+        }
+    }
+
     init {
         loadAlbums()
         loadPermissions()

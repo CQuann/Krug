@@ -52,7 +52,7 @@ class RetrofitAlbumRepository @Inject constructor(
         return try {
             val file = ImageUtils.cropToSquareFile(context, uri)
                 ?: return DataResult.Error("Не удалось обработать фото")
-            val compressed = ImageUtils.compressImage(file, 5 * 1024 * 1024)
+            val compressed = ImageUtils.compressPhoto(file)
             val requestBody = compressed.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("photo", compressed.name, requestBody)
             val response = api.uploadPhoto(eventId, albumId, part)

@@ -1,6 +1,5 @@
 package com.example.krug.ui.components
 
-import android.graphics.Bitmap
 import android.net.Uri
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
@@ -27,7 +26,6 @@ import androidx.compose.ui.window.Popup
 import androidx.core.content.FileProvider
 import coil.compose.AsyncImage
 import java.io.File
-import java.io.FileOutputStream
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -41,17 +39,40 @@ fun PhotoPicker(
 ) {
     val context = LocalContext.current
 
-    val cameraLauncher = rememberLauncherForActivityResult(ActivityResultContracts.TakePicturePreview()) { bitmap ->
-        if (bitmap != null) {
-            val uri = bitmapToUri(context, bitmap)
-            onUriSelected(uri)
-        }
-    }
-    val galleryLauncher = rememberLauncherForActivityResult(ActivityResultContracts.GetContent()) { uri ->
-        uri?.let { onUriSelected(it) }
+    fun createTempImageUri(): Uri {
+        val file = File(context.cacheDir, "camera_${System.currentTimeMillis()}.jpg")
+        file.parentFile?.mkdirs()
+        file.createNewFile()
+        return FileProvider.getUriForFile(
+            context,
+            "${context.packageName}.fileprovider",
+            file
+        )
     }
 
     if (useBottomSheet) {
+        var photoUri by remember { mutableStateOf<Uri?>(null) }
+
+        val cameraLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.TakePicture()
+        ) { success ->
+            if (success) {
+                photoUri?.let {
+                    onUriSelected(it)
+                    onDismiss?.invoke()
+                }
+            }
+        }
+
+        val galleryLauncher = rememberLauncherForActivityResult(
+            ActivityResultContracts.GetContent()
+        ) { uri ->
+            if (uri != null) {
+                onUriSelected(uri)
+                onDismiss?.invoke()
+            }
+        }
+
         val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
         ModalBottomSheet(
             onDismissRequest = { onDismiss?.invoke() },
@@ -71,8 +92,9 @@ fun PhotoPicker(
                     horizontalArrangement = Arrangement.SpaceEvenly
                 ) {
                     OutlinedButton(onClick = {
-                        cameraLauncher.launch(null)
-                        onDismiss?.invoke()
+                        val uri = createTempImageUri()
+                        photoUri = uri
+                        cameraLauncher.launch(uri)
                     }) {
                         Icon(Icons.Default.CameraAlt, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
@@ -80,7 +102,6 @@ fun PhotoPicker(
                     }
                     OutlinedButton(onClick = {
                         galleryLauncher.launch("image/*")
-                        onDismiss?.invoke()
                     }) {
                         Icon(Icons.Default.PhotoLibrary, contentDescription = null)
                         Spacer(Modifier.width(8.dp))
@@ -92,8 +113,22 @@ fun PhotoPicker(
         return
     }
 
-    // Старый Popup (аватары, события)
     var showMenu by remember { mutableStateOf(false) }
+
+    val cameraLauncherPreview = rememberLauncherForActivityResult(
+        ActivityResultContracts.TakePicturePreview()
+    ) { bitmap ->
+        if (bitmap != null) {
+            val uri = bitmapToUri(context, bitmap)
+            onUriSelected(uri)
+        }
+    }
+
+    val galleryLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.GetContent()
+    ) { uri ->
+        uri?.let { onUriSelected(it) }
+    }
 
     Box(modifier = modifier, contentAlignment = Alignment.Center) {
         Column(
@@ -161,13 +196,12 @@ fun PhotoPicker(
                         tonalElevation = 8.dp
                     ) {
                         Column {
-                            // Камера
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
                                     .clickable {
                                         showMenu = false
-                                        cameraLauncher.launch(null)
+                                        cameraLauncherPreview.launch(null)
                                     }
                                     .padding(horizontal = 16.dp, vertical = 14.dp),
                                 verticalAlignment = Alignment.CenterVertically,
@@ -177,7 +211,6 @@ fun PhotoPicker(
                                 Icon(Icons.Default.CameraAlt, contentDescription = null)
                             }
                             HorizontalDivider()
-                            // Галерея
                             Row(
                                 modifier = Modifier
                                     .fillMaxWidth()
@@ -200,8 +233,8 @@ fun PhotoPicker(
     }
 }
 
-private fun bitmapToUri(context: android.content.Context, bitmap: Bitmap): Uri {
+private fun bitmapToUri(context: android.content.Context, bitmap: android.graphics.Bitmap): Uri {
     val file = File(context.cacheDir, "camera_${System.currentTimeMillis()}.jpg")
-    FileOutputStream(file).use { bitmap.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+    java.io.FileOutputStream(file).use { bitmap.compress(android.graphics.Bitmap.CompressFormat.JPEG, 90, it) }
     return FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
 }

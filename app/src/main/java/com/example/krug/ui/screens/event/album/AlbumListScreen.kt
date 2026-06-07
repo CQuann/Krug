@@ -9,6 +9,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -23,8 +24,10 @@ import kotlinx.coroutines.flow.SharedFlow
 @Composable
 fun AlbumListScreen(
     uiState: AlbumsUiState,
-    snackbarEvents: SharedFlow<String>,
     canCreateAlbum: Boolean,
+    isRefreshing: Boolean,
+    onRefresh: () -> Unit,
+    snackbarEvents: SharedFlow<String>,
     onCreateAlbum: (String, String?) -> Unit,
     onDeleteAlbum: (Long) -> Unit,
     onAlbumClick: (Long) -> Unit
@@ -46,40 +49,46 @@ fun AlbumListScreen(
             }
         }
     ) { padding ->
-        when (uiState) {
-            is AlbumsUiState.Loading -> {
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    contentAlignment = Alignment.Center
-                ) { CircularProgressIndicator() }
-            }
-            is AlbumsUiState.Error -> {
-                Box(
-                    modifier = Modifier.fillMaxSize().padding(padding),
-                    contentAlignment = Alignment.Center
-                ) { Text(uiState.message, color = MaterialTheme.colorScheme.error) }
-            }
-            is AlbumsUiState.Content -> {
-                if (uiState.albums.isEmpty()) {
-                    Column(
-                        modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
-                        horizontalAlignment = Alignment.CenterHorizontally,
-                        verticalArrangement = Arrangement.Center
-                    ) {
-                        Text("Нет альбомов", style = MaterialTheme.typography.bodyLarge)
-                    }
-                } else {
-                    LazyColumn(
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = onRefresh,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            when (uiState) {
+                is AlbumsUiState.Loading -> {
+                    Box(
                         modifier = Modifier.fillMaxSize().padding(padding),
-                        contentPadding = PaddingValues(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        items(uiState.albums) { album ->
-                            AlbumCard(
-                                album = album,
-                                onClick = { onAlbumClick(album.albumId) },
-                                onDelete = { onDeleteAlbum(album.albumId) }
-                            )
+                        contentAlignment = Alignment.Center
+                    ) { CircularProgressIndicator() }
+                }
+                is AlbumsUiState.Error -> {
+                    Box(
+                        modifier = Modifier.fillMaxSize().padding(padding),
+                        contentAlignment = Alignment.Center
+                    ) { Text(uiState.message, color = MaterialTheme.colorScheme.error) }
+                }
+                is AlbumsUiState.Content -> {
+                    if (uiState.albums.isEmpty()) {
+                        Column(
+                            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
+                            horizontalAlignment = Alignment.CenterHorizontally,
+                            verticalArrangement = Arrangement.Center
+                        ) {
+                            Text("Нет альбомов", style = MaterialTheme.typography.bodyLarge)
+                        }
+                    } else {
+                        LazyColumn(
+                            modifier = Modifier.fillMaxSize().padding(padding),
+                            contentPadding = PaddingValues(16.dp),
+                            verticalArrangement = Arrangement.spacedBy(8.dp)
+                        ) {
+                            items(uiState.albums) { album ->
+                                AlbumCard(
+                                    album = album,
+                                    onClick = { onAlbumClick(album.albumId) },
+                                    onDelete = { onDeleteAlbum(album.albumId) }
+                                )
+                            }
                         }
                     }
                 }
@@ -134,15 +143,33 @@ fun AlbumListScreenPreview() {
         AlbumListScreen(
             uiState = AlbumsUiState.Content(
                 listOf(
-                    AlbumResponse(1, "42", "Общие фотки", "Альбом для всех", 5, "2024-01-01T12:00:00Z", "2024-01-01T12:00:00Z"),
-                    AlbumResponse(2, "42", "После вечеринки", null, 5, "2024-01-02T10:00:00Z", "2024-01-02T10:00:00Z")
+                    AlbumResponse(
+                        1,
+                        "42",
+                        "Общие фотки",
+                        "Альбом для всех",
+                        5,
+                        "2024-01-01T12:00:00Z",
+                        "2024-01-01T12:00:00Z"
+                    ),
+                    AlbumResponse(
+                        2,
+                        "42",
+                        "После вечеринки",
+                        null,
+                        5,
+                        "2024-01-02T10:00:00Z",
+                        "2024-01-02T10:00:00Z"
+                    )
                 )
             ),
             snackbarEvents = MutableSharedFlow(),
             onCreateAlbum = { _, _ -> },
             onDeleteAlbum = {},
             onAlbumClick = {},
-            canCreateAlbum = true
+            canCreateAlbum = true,
+            isRefreshing = false,
+            onRefresh = {}
         )
     }
 }
@@ -157,7 +184,9 @@ fun AlbumListScreenEmptyPreview() {
             onCreateAlbum = { _, _ -> },
             onDeleteAlbum = {},
             onAlbumClick = {},
-            canCreateAlbum = true
+            canCreateAlbum = true,
+            isRefreshing = false,
+            onRefresh = {}
         )
     }
 }

@@ -62,6 +62,17 @@ class AlbumDetailViewModel @Inject constructor(
     private val _currentPhotoIndex = MutableStateFlow(0)
     val currentPhotoIndex: StateFlow<Int> = _currentPhotoIndex.asStateFlow()
 
+    private val _isRefreshing = MutableStateFlow(false)
+    val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
+
+    fun refreshAlbum() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            loadAlbum()
+            _isRefreshing.value = false
+        }
+    }
+
     init {
         loadAlbum()
         loadPermissions()
@@ -100,15 +111,10 @@ class AlbumDetailViewModel @Inject constructor(
             when (val result = albumRepository.uploadPhoto(eventId, albumId, uri)) {
                 is DataResult.Success -> {
                     _snackbarEvents.emit("Фото загружено")
-                    val newPhoto = result.data
                     _uiState.update { state ->
-                        if (state is DetailUiState.Content) {
-                            state.copy(
-                                album = state.album.copy(
-                                    photos = state.album.photos + newPhoto
-                                )
-                            )
-                        } else state
+                        if (state is DetailUiState.Content)
+                            state.copy(album = state.album.copy(photos = state.album.photos + result.data))
+                        else state
                     }
                 }
                 is DataResult.Error -> _snackbarEvents.emit(result.message)
@@ -121,15 +127,20 @@ class AlbumDetailViewModel @Inject constructor(
             when (val result = albumRepository.deletePhoto(eventId, albumId, photoId)) {
                 is DataResult.Success -> {
                     _snackbarEvents.emit("Фото удалено")
-                    // Оптимистичное удаление фото из списка
                     _uiState.update { state ->
-                        if (state is DetailUiState.Content) {
-                            state.copy(
-                                album = state.album.copy(
-                                    photos = state.album.photos.filter { it.photoId != photoId }
-                                )
-                            )
-                        } else state
+                        if (state is DetailUiState.Content)
+                            state.copy(album = state.album.copy(photos = state.album.photos.filter { it.photoId != photoId }))
+                        else state
+                    }
+                    // обновляем полноэкранный просмотр
+                    val updatedFull = _fullScreenPhotos.value.filter { it.photoId != photoId }
+                    if (updatedFull.isEmpty()) {
+                        _fullScreenPhotos.value = emptyList()
+                    } else {
+                        var newIndex = _currentPhotoIndex.value
+                        if (newIndex >= updatedFull.size) newIndex = updatedFull.size - 1
+                        _fullScreenPhotos.value = updatedFull
+                        _currentPhotoIndex.value = newIndex
                     }
                 }
                 is DataResult.Error -> _snackbarEvents.emit(result.message)

@@ -134,7 +134,7 @@ class RetrofitAuthRepository @Inject constructor(
         return try {
             val croppedFile = ImageUtils.cropToSquareFile(context, uri)
                 ?: return DataResult.Error("Не удалось обработать фото")
-            val compressedFile = ImageUtils.compressImage(croppedFile, 5 * 1024 * 1024)
+            val compressedFile = ImageUtils.compressPhoto(croppedFile)
             val requestBody = compressedFile.asRequestBody("image/jpeg".toMediaTypeOrNull())
             val part = MultipartBody.Part.createFormData("avatar", compressedFile.name, requestBody)
             val response = authApi.uploadAvatar(part)

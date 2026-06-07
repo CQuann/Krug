@@ -1,8 +1,10 @@
 package com.example.krug.di
 
+import com.example.krug.data.repository.AlbumRepository
 import com.example.krug.data.repository.AuthRepository
 import com.example.krug.data.repository.EventRepository
 import com.example.krug.data.repository.PlanningRepository
+import com.example.krug.data.repository.RetrofitAlbumRepository
 import com.example.krug.data.repository.RetrofitAuthRepository
 import com.example.krug.data.repository.RetrofitEventRepository
 import com.example.krug.data.repository.RetrofitPlanningRepository
@@ -31,4 +33,8 @@ abstract class RepositoryModule {
     @Binds
     @Singleton
     abstract fun bindPlanningRepository(repo: RetrofitPlanningRepository): PlanningRepository
+
+    @Binds
+    @Singleton
+    abstract fun bindAlbumRepository(repo: RetrofitAlbumRepository): AlbumRepository
 }

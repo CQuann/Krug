@@ -35,9 +35,7 @@ fun AlbumListScreen(
     val snackbarHostState = remember { SnackbarHostState() }
     var showCreateDialog by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        snackbarEvents.collect { msg -> snackbarHostState.showSnackbar(msg) }
-    }
+    LaunchedEffect(Unit) { snackbarEvents.collect { snackbarHostState.showSnackbar(it) } }
 
     Scaffold(
         snackbarHost = { SnackbarHost(snackbarHostState) },
@@ -55,39 +53,15 @@ fun AlbumListScreen(
             modifier = Modifier.fillMaxSize()
         ) {
             when (uiState) {
-                is AlbumsUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize().padding(padding),
-                        contentAlignment = Alignment.Center
-                    ) { CircularProgressIndicator() }
-                }
-                is AlbumsUiState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize().padding(padding),
-                        contentAlignment = Alignment.Center
-                    ) { Text(uiState.message, color = MaterialTheme.colorScheme.error) }
-                }
+                is AlbumsUiState.Loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                is AlbumsUiState.Error -> Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Text(uiState.message, color = MaterialTheme.colorScheme.error) }
                 is AlbumsUiState.Content -> {
                     if (uiState.albums.isEmpty()) {
-                        Column(
-                            modifier = Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()),
-                            horizontalAlignment = Alignment.CenterHorizontally,
-                            verticalArrangement = Arrangement.Center
-                        ) {
-                            Text("Нет альбомов", style = MaterialTheme.typography.bodyLarge)
-                        }
+                        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Text("Нет альбомов") }
                     } else {
-                        LazyColumn(
-                            modifier = Modifier.fillMaxSize().padding(padding),
-                            contentPadding = PaddingValues(16.dp),
-                            verticalArrangement = Arrangement.spacedBy(8.dp)
-                        ) {
+                        LazyColumn(modifier = Modifier.fillMaxSize().padding(padding), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                             items(uiState.albums) { album ->
-                                AlbumCard(
-                                    album = album,
-                                    onClick = { onAlbumClick(album.albumId) },
-                                    onDelete = { onDeleteAlbum(album.albumId) }
-                                )
+                                AlbumCard(album = album, onClick = { onAlbumClick(album.albumId) }, onDelete = { onDeleteAlbum(album.albumId) })
                             }
                         }
                     }

@@ -176,7 +176,7 @@ fun EventDetailScreen(
                                 contentDescription = null,
                                 modifier = Modifier
                                     .fillMaxSize()
-                                    .clip(CircleShape),
+                                    .clip(RoundedCornerShape(16.dp)),
                                 contentScale = ContentScale.Crop,
                                 error = painterResource(R.drawable.ic_default_event_avatar)
                             )

@@ -5,8 +5,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.CalendarToday
+import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -20,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -36,9 +41,7 @@ import java.time.format.DateTimeFormatter
 fun EventCard(event: Event, onClick: () -> Unit) {
     val bgRes = EventColors.colors.find { it.hex == event.color }?.bgResId
         ?: R.drawable.bg_event_blue
-
     var hasAvatar by remember { mutableStateOf(true) }
-
 
     Card(
         modifier = Modifier
@@ -49,7 +52,7 @@ fun EventCard(event: Event, onClick: () -> Unit) {
         colors = CardDefaults.cardColors(containerColor = Color.Transparent)
     ) {
         Box {
-            // Фоновая подложка
+            // Фон
             Image(
                 painter = painterResource(bgRes),
                 contentDescription = null,
@@ -57,46 +60,68 @@ fun EventCard(event: Event, onClick: () -> Unit) {
                 modifier = Modifier.fillMaxSize().matchParentSize()
             )
 
-            // Контент
             Row(
-                modifier = Modifier.padding(12.dp).height(100.dp),
+                modifier = Modifier.padding(12.dp).height(90.dp),
                 verticalAlignment = Alignment.Top
             ) {
+                // Текстовая колонка
                 Column(
                     modifier = Modifier
                         .weight(1f)
                         .padding(end = if (hasAvatar) 12.dp else 0.dp)
-                        .background(Color.Black.copy(alpha = 0.35f), RoundedCornerShape(8.dp))
-                        .padding(8.dp)
+                        .background(Color.Black.copy(alpha = 0.5f), RoundedCornerShape(12.dp))
+                        .padding(12.dp)
                 ) {
                     Text(
                         text = event.title,
                         style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
                         color = Color.White,
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis
                     )
                     if (!event.location.isNullOrBlank()) {
-                        Text(
-                            text = event.location,
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = Color.White.copy(alpha = 0.9f),
-                            maxLines = 1,
-                            overflow = TextOverflow.Ellipsis
-                        )
+                        Spacer(Modifier.height(6.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.LocationOn,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = event.location,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = Color.White.copy(alpha = 0.9f),
+                                maxLines = 1,
+                                overflow = TextOverflow.Ellipsis
+                            )
+                        }
                     }
                     val dateStr = formatEventDate(event.startDateTime, event.endDateTime)
                     if (dateStr != null) {
-                        Text(
-                            text = dateStr,
-                            style = MaterialTheme.typography.bodySmall,
-                            color = Color.White.copy(alpha = 0.8f)
-                        )
+                        Spacer(Modifier.height(4.dp))
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.CalendarToday,
+                                contentDescription = null,
+                                tint = Color.White.copy(alpha = 0.7f),
+                                modifier = Modifier.size(14.dp)
+                            )
+                            Spacer(Modifier.width(4.dp))
+                            Text(
+                                text = dateStr,
+                                style = MaterialTheme.typography.bodySmall,
+                                color = Color.White.copy(alpha = 0.8f)
+                            )
+                        }
                     }
                 }
 
+                // Аватарка события
                 if (hasAvatar) {
-                    Box(modifier = Modifier.size(100.dp).clip(RoundedCornerShape(16.dp))) {
+                    Box(modifier = Modifier.size(90.dp).clip(RoundedCornerShape(16.dp))) {
                         AsyncImage(
                             model = "${Constants.BASE_URL}/event-avatars/${event.eventId}",
                             contentDescription = null,

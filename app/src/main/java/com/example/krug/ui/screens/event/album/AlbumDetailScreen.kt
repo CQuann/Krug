@@ -65,12 +65,9 @@ fun AlbumDetailScreen(
     var showDeleteAlbumDialog by remember { mutableStateOf(false) }
     var showPhotoPicker by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        snackbarEvents.collect { msg -> snackbarHostState.showSnackbar(msg) }
-    }
+    LaunchedEffect(Unit) { snackbarEvents.collect { snackbarHostState.showSnackbar(it) } }
 
     if (fullScreenPhotos.isNotEmpty()) {
-        // Полноэкранный просмотр
         FullScreenViewer(
             photos = fullScreenPhotos,
             initialPage = currentPhotoIndex,
@@ -80,7 +77,6 @@ fun AlbumDetailScreen(
             onDownload = onDownloadCurrentPhoto,
             onDelete = { photoId ->
                 onDeletePhoto(photoId)
-                // Если после удаления не останется фото, закрыть просмотр
                 if (fullScreenPhotos.size == 1) onCloseFullScreen()
             }
         )
@@ -91,25 +87,12 @@ fun AlbumDetailScreen(
         snackbarHost = { SnackbarHost(snackbarHostState) },
         topBar = {
             TopAppBar(
-                title = {
-                    Text(
-                        text = (uiState as? DetailUiState.Content)?.album?.title ?: "Загрузка...",
-                        style = MaterialTheme.typography.titleMedium
-                    )
-                },
-                navigationIcon = {
-                    IconButton(onClick = onBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Назад")
-                    }
-                },
+                title = { Text((uiState as? DetailUiState.Content)?.album?.title ?: "Альбом", style = MaterialTheme.typography.titleMedium) },
+                navigationIcon = { IconButton(onClick = onBack) { Icon(Icons.AutoMirrored.Filled.ArrowBack, "Назад") } },
                 actions = {
                     if (canDelete) {
                         IconButton(onClick = { showDeleteAlbumDialog = true }) {
-                            Icon(
-                                Icons.Default.Delete,
-                                contentDescription = "Удалить альбом",
-                                tint = MaterialTheme.colorScheme.error
-                            )
+                            Icon(Icons.Default.Delete, "Удалить альбом", tint = MaterialTheme.colorScheme.error)
                         }
                     }
                 }
@@ -124,50 +107,24 @@ fun AlbumDetailScreen(
         PullToRefreshBox(
             isRefreshing = isRefreshing,
             onRefresh = onRefresh,
-            modifier = Modifier.fillMaxSize().padding(padding)
+            modifier = Modifier.fillMaxSize()
         ) {
-
             when (uiState) {
-                is DetailUiState.Loading -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) { CircularProgressIndicator() }
-                }
-
-                is DetailUiState.Error -> {
-                    Box(
-                        modifier = Modifier.fillMaxSize(),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Text(uiState.message, color = MaterialTheme.colorScheme.error)
-                    }
-                }
-
+                is DetailUiState.Loading -> Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) { CircularProgressIndicator() }
+                is DetailUiState.Error -> Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Text(uiState.message, color = MaterialTheme.colorScheme.error) }
                 is DetailUiState.Content -> {
-                    val photos = uiState.album.photos
-                    if (photos.isEmpty()) {
-                        Box(
-                            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()),
-                            contentAlignment = Alignment.Center
-                        ) {
-                            Text("Нет фотографий", style = MaterialTheme.typography.bodyLarge)
-                        }
+                    if (uiState.album.photos.isEmpty()) {
+                        Column(Modifier.fillMaxSize().padding(padding).verticalScroll(rememberScrollState()), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) { Text("Нет фотографий") }
                     } else {
                         LazyVerticalGrid(
                             columns = GridCells.Fixed(3),
-                            modifier = Modifier.fillMaxSize(),
+                            modifier = Modifier.fillMaxSize().padding(padding),
                             contentPadding = PaddingValues(8.dp),
                             horizontalArrangement = Arrangement.spacedBy(4.dp),
                             verticalArrangement = Arrangement.spacedBy(4.dp)
                         ) {
-                            items(photos) { photo ->
-                                PhotoGridItem(
-                                    photo = photo,
-                                    onClick = {
-                                        onOpenFullScreen(photos, photos.indexOf(photo))
-                                    }
-                                )
+                            items(uiState.album.photos) { photo ->
+                                PhotoGridItem(photo = photo, onClick = { onOpenFullScreen(uiState.album.photos, uiState.album.photos.indexOf(photo)) })
                             }
                         }
                     }

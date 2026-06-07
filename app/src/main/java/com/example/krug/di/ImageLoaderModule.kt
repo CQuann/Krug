@@ -23,7 +23,11 @@ object ImageLoaderModule {
     ): ImageLoader {
         return ImageLoader.Builder(context)
             .okHttpClient(okHttpClient)
-            .memoryCache { MemoryCache.Builder(context).maxSizePercent(0.0).build() }
+            .memoryCache {
+                MemoryCache.Builder(context)
+                    .maxSizePercent(0.25)
+                    .build()
+            }
             .diskCache(null)
             .crossfade(true)
             .build()

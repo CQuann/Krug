@@ -53,6 +53,8 @@ class MainAppViewModel @Inject constructor(
     val pendingJoinEvent: StateFlow<Event?> = _pendingJoinEvent.asStateFlow()
     private val _isJoining = MutableStateFlow(false)
 
+    private var lastEvents: List<Event>? = null
+
 
     init {
         viewModelScope.launch {
@@ -114,11 +116,13 @@ class MainAppViewModel @Inject constructor(
         }
     }
 
+
+
     fun loadEvents(reset: Boolean = false) {
         viewModelScope.launch {
             if (reset) {
                 eventsOffset = 0
-                _events.value = emptyList()
+                _events.value = lastEvents ?: emptyList()
                 _isRefreshing.value = true
             } else {
                 _isLoadingMore.value = true
@@ -127,9 +131,10 @@ class MainAppViewModel @Inject constructor(
             when (val result = eventRepository.getEvents(_currentStatus.value, pageSize, eventsOffset)) {
                 is DataResult.Success -> {
                     val response = result.data
-                    _events.value = if (reset) response.events else _events.value + response.events
+                    lastEvents = if (reset) response.events else lastEvents.orEmpty() + response.events
+                    _events.value = lastEvents!!
                     _totalEvents.value = response.total
-                    eventsOffset += response.events.size
+                    eventsOffset = lastEvents!!.size
                     _error.value = null
                 }
                 is DataResult.Error -> {

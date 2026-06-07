@@ -14,15 +14,12 @@ import javax.inject.Inject
 
 @HiltViewModel
 class AlbumListViewModel @Inject constructor(
-    private val repository: AlbumRepository,
+    private val albumRepository: AlbumRepository,
     private val eventRepository: EventRepository,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
     private val eventId: String = savedStateHandle.get<String>("eventId") ?: ""
-
-    private val _canCreateAlbum = MutableStateFlow(false)
-    val canCreateAlbum: StateFlow<Boolean> = _canCreateAlbum.asStateFlow()
 
     sealed class AlbumsUiState {
         object Loading : AlbumsUiState()
@@ -33,54 +30,53 @@ class AlbumListViewModel @Inject constructor(
     private val _uiState = MutableStateFlow<AlbumsUiState>(AlbumsUiState.Loading)
     val uiState: StateFlow<AlbumsUiState> = _uiState.asStateFlow()
 
-    private val _snackbarEvents = MutableSharedFlow<String>()
-    val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
-
     private val _isRefreshing = MutableStateFlow(false)
     val isRefreshing: StateFlow<Boolean> = _isRefreshing.asStateFlow()
 
-    fun refreshAlbums() {
-        viewModelScope.launch {
-            _isRefreshing.value = true
-            loadAlbums()
-            _isRefreshing.value = false
-        }
-    }
+    private val _snackbarEvents = MutableSharedFlow<String>()
+    val snackbarEvents: SharedFlow<String> = _snackbarEvents.asSharedFlow()
+
+    private val _canCreateAlbum = MutableStateFlow(false)
+    val canCreateAlbum: StateFlow<Boolean> = _canCreateAlbum.asStateFlow()
+
+    private var lastAlbums: List<AlbumResponse>? = null
 
     init {
         loadAlbums()
         loadPermissions()
     }
 
-    private fun loadPermissions() {
+    fun loadAlbums(isRefresh: Boolean = false) {
         viewModelScope.launch {
-            when (val result = eventRepository.getEvent(eventId)) {
-                is DataResult.Success -> {
-                    val permissions = result.data.permissions
-                    _canCreateAlbum.value = permissions.isNotEmpty() &&
-                            (permissions[0] == '1' || permissions[1] == '1')  // создатель или админ
-                }
-                is DataResult.Error -> { /* оставляем false */ }
+            if (!isRefresh && lastAlbums == null) {
+                _uiState.value = AlbumsUiState.Loading
             }
-        }
-    }
-
-    fun loadAlbums() {
-        viewModelScope.launch {
-            _uiState.value = AlbumsUiState.Loading
-            when (val result = repository.getAlbums(eventId)) {
-                is DataResult.Success -> _uiState.value = AlbumsUiState.Content(result.data)
+            when (val result = albumRepository.getAlbums(eventId)) {
+                is DataResult.Success -> {
+                    lastAlbums = result.data
+                    _uiState.value = AlbumsUiState.Content(lastAlbums!!)
+                }
                 is DataResult.Error -> {
-                    _uiState.value = AlbumsUiState.Error(result.message)
+                    if (lastAlbums == null) {
+                        _uiState.value = AlbumsUiState.Error(result.message)
+                    }
                     _snackbarEvents.emit(result.message)
                 }
             }
+            if (isRefresh) _isRefreshing.value = false
+        }
+    }
+
+    fun refreshAlbums() {
+        viewModelScope.launch {
+            _isRefreshing.value = true
+            loadAlbums(isRefresh = true)
         }
     }
 
     fun createAlbum(title: String, description: String?) {
         viewModelScope.launch {
-            when (val result = repository.createAlbum(eventId, title, description)) {
+            when (val result = albumRepository.createAlbum(eventId, title, description)) {
                 is DataResult.Success -> {
                     _snackbarEvents.emit("Альбом создан")
                     loadAlbums()
@@ -92,12 +88,35 @@ class AlbumListViewModel @Inject constructor(
 
     fun deleteAlbum(albumId: Long) {
         viewModelScope.launch {
-            when (val result = repository.deleteAlbum(eventId, albumId)) {
+            _uiState.update { state ->
+                if (state is AlbumsUiState.Content) {
+                    state.copy(albums = state.albums.filter { it.albumId != albumId })
+                } else state
+            }
+            when (val result = albumRepository.deleteAlbum(eventId, albumId)) {
                 is DataResult.Success -> {
                     _snackbarEvents.emit("Альбом удалён")
-                    loadAlbums()
+                    // Обновляем список актуальными данными в фоне
+                    loadAlbums(isRefresh = true)
                 }
-                is DataResult.Error -> _snackbarEvents.emit(result.message)
+                is DataResult.Error -> {
+                    _snackbarEvents.emit(result.message)
+                    // Откатываем изменения, перезагружая точный список
+                    loadAlbums(isRefresh = true)
+                }
+            }
+        }
+    }
+
+    private fun loadPermissions() {
+        viewModelScope.launch {
+            when (val result = eventRepository.getEvent(eventId)) {
+                is DataResult.Success -> {
+                    val permissions = result.data.permissions
+                    _canCreateAlbum.value = permissions.isNotEmpty() &&
+                            (permissions[0] == '1' || permissions[1] == '1')
+                }
+                is DataResult.Error -> { /* nothing */ }
             }
         }
     }
